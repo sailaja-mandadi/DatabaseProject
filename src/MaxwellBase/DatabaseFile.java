@@ -33,6 +33,8 @@ public abstract class DatabaseFile extends RandomAccessFile {
         return numberOfPages;
     }
 
+    public abstract int splitPage(int page) throws IOException;
+
     public void jumpToPage(int pageNumber) throws IOException {
         this.seek((long) pageNumber * pageSize);
     }

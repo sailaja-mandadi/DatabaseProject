@@ -69,18 +69,20 @@ public class TableFile extends DatabaseFile{
         return this.readInt();
     }
 
-    public void SplitPage(int pageNumber) throws IOException {
+    public int splitPage(int pageNumber) throws IOException {
         int parentPage = getParentPage(pageNumber);
         int newPage = createPage(parentPage);
-        int numRecords = getNumberOfCells(pageNumber);
+        this.seek((long) pageNumber * pageSize + 0x06);
+        this.writeInt(pageNumber);
+        return newPage;
     }
 
-    public void writePagePointer(int page, int pointer) throws IOException {
+    public void writePagePointer(int page, int pointer, int rowId) throws IOException {
         short cellSize = 8;
-        int rowId = getMaxRowId(pointer);
         short contentStart = setContentStart(page, cellSize);
         if (contentStart + cellSize > pageSize) {
-            SplitPage(page);
+            page = splitPage(page);
+            contentStart = setContentStart(page, cellSize);
         }
         this.seek((long) page * pageSize + contentStart);
         this.writeInt(rowId);
@@ -88,12 +90,11 @@ public class TableFile extends DatabaseFile{
     }
 
     public void writeRecord(Record record, int page) throws IOException {
-
         short recordSize = record.getRecordSize();
         short cellSize = (short) (recordSize + 6);
         short contentStart = this.setContentStart(page, cellSize);
         if (contentStart + cellSize > pageSize) {
-            SplitPage(page);
+            page = splitPage(page);
         }
         short numberOfCells = incrementNumberOfCells(page);
         this.seek((long) pageSize * page + 0x0E + 2 * numberOfCells);
