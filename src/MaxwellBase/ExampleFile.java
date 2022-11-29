@@ -1,12 +1,13 @@
+package MaxwellBase;
+
 import java.io.ByteArrayOutputStream;
 import java.io.DataOutputStream;
 import java.io.RandomAccessFile;
-import java.io.File;
 import java.io.FileNotFoundException;
 import java.nio.ByteBuffer;
 
-public class TableFile extends RandomAccessFile {
-    public TableFile(String name, String mode) throws FileNotFoundException {
+public class ExampleFile extends RandomAccessFile {
+    public ExampleFile(String name, String mode) throws FileNotFoundException {
         super(name, mode);
         // TODO Auto-generated constructor stub
     }
@@ -39,7 +40,7 @@ public class TableFile extends RandomAccessFile {
 
         try {
             // Change according to your own file system.
-            String filePath = "C:/Users/jmars/IdeaProjects/DatabaseProject"
+            String filePath = "C:/Users/jmars/IdeaProjects/DatabaseProject";
             RandomAccessFile tableFile = new RandomAccessFile(filePath + "/student.tbl","rw");
             tableFile.setLength(pageSize);
             /* Write page header data */
@@ -202,7 +203,7 @@ public class TableFile extends RandomAccessFile {
     }
 
     public static void setPageSize(int pageSize) {
-        TableFile.pageSize = pageSize;
+        ExampleFile.pageSize = pageSize;
     }
 
     public static int getStartOfContent() {
@@ -210,7 +211,7 @@ public class TableFile extends RandomAccessFile {
     }
 
     public static void setStartOfContent(int startOfContent) {
-        TableFile.startOfContent = startOfContent;
+        ExampleFile.startOfContent = startOfContent;
     }
     public static void incrementRecordCount(RandomAccessFile raf) throws Exception {
         raf.seek(0x01);

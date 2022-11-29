@@ -1,14 +1,24 @@
+package MaxwellBase;
+
 public class Settings {
     static String prompt = "maxwellsql> ";
-    static String version = "v0.0";
+    static String version = "v1.0";
     static String copyright = "©2022 Team Maxwell";
     static boolean isExit = false;
+    static String userDataDirectory = "data/user_data";
+    static String catalogDirectory = "data/catalog";
     /*
      * Page size for all files is 512 bytes by default.
      * You may choose to make it user modifiable
      */
     static int pageSize = 512;
 
+    public static String getUserDataDirectory(){
+        return userDataDirectory;
+    }
+    public static String getCatalogDirectory(){
+        return catalogDirectory;
+    }
 
     public static boolean isExit() {
         return isExit;

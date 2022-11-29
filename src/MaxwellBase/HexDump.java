@@ -1,3 +1,5 @@
+package MaxwellBase;
+
 import java.io.RandomAccessFile;
 import java.io.File;
 import java.io.FileReader;
@@ -53,7 +55,7 @@ public class HexDump {
         if(args.length == 0) {
             out.println();
             out.println("ERROR: Must supply a file name to be displayed");
-            out.println("USAGE: java HexDump <file_name>");
+            out.println("USAGE: java MaxwellBase.HexDump <file_name>");
             out.println();
             /* Exit the JVM */
             System.exit(0);
@@ -204,7 +206,7 @@ public class HexDump {
 
     static void displayCopyright() {
         out.println("*");
-        out.println("* HexDump (c)2018 Chris Irwin Davis");
+        out.println("* MaxwellBase.HexDump (c)2018 Chris Irwin Davis");
         out.println("*");
     }
 

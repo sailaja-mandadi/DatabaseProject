@@ -1,3 +1,5 @@
+package MaxwellBase;
+
 import static java.lang.System.out;
 
 import java.io.RandomAccessFile;
@@ -78,7 +80,7 @@ public class Commands {
     }
 
     public static void displayVersion() {
-        System.out.println("DavisBaseLite Version " + Settings.getVersion());
+        System.out.println("MaxwellBaseLite Version " + Settings.getVersion());
         System.out.println(Settings.getCopyright());
     }
 
@@ -130,6 +132,7 @@ public class Commands {
     public static void show(ArrayList<String> commandTokens) {
         System.out.println("Command: " + tokensToCommandString(commandTokens));
         System.out.println("Stub: This is the show method");
+
         /* TODO: Your code goes here */
     }
 
@@ -167,7 +170,7 @@ public class Commands {
 
     /**
      *  Stub method for updating records
-     *  @param updateString is a String of the user input
+     *  updateString is a String of the user input
      */
     public static void parseUpdate(ArrayList<String> commandTokens) {
         System.out.println("Command: " + tokensToCommandString(commandTokens));

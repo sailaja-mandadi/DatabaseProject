@@ -1,5 +1,6 @@
-//import java.io.File;
+package MaxwellBase;//import java.io.File;
 //import java.io.FileReader;
+import java.io.File;
 import java.util.Scanner;
 
 /**
@@ -28,6 +29,18 @@ public class MaxwellBase {
      *  Main method
      */
     public static void main(String[] args) {
+
+        /* Initializing */
+        File dataDirectory = new File("data");
+        /* Checking if data directory exit, if not create new directory of data storing Tables and Columns information
+        * If any of the tables doesn't exist it will reinitialize both the tables. Scraping the current Columns and Tables table*/
+        if (!dataDirectory.exists()){
+            System.out.println("The data directory doesn't exit. Initializing...");
+            testInitializing.initialize(dataDirectory);
+        }
+        else{
+            testInitializing.initializeUserCatalogDirectory();
+        }
 
         /* Display the welcome screen */
         Utils.splashScreen();
