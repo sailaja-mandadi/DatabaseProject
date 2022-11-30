@@ -12,14 +12,10 @@ public abstract class DatabaseFile extends RandomAccessFile {
     public DatabaseFile(String name, String mode) throws java.io.FileNotFoundException {
         super(name, mode);
     }
-    public int createPage(int parentPage) throws IOException {
+    public int createPage(int parentPage, Constants.PageType pageType) throws IOException {
         numberOfPages++;
         this.setLength(pageSize);
-        if (this.fileType == Constants.FileType.TABLE) {
-            this.writeByte(Constants.PageType.TABLE_LEAF.getValue());
-        } else if (this.fileType == Constants.FileType.INDEX) {
-            this.writeByte(Constants.PageType.INDEX_LEAF.getValue());
-        }
+        this.writeByte(pageType.getValue());
         this.writeByte(0x00); // Unused
         this.writeShort(0x00); // Number of cells
         this.writeShort(pageSize); // Start of content, no content yet so it's the end of the page

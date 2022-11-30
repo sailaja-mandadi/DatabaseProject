@@ -13,7 +13,7 @@ public class TableFile extends DatabaseFile{
         super(name, mode);
         this.tableName = name;
         this.fileType = Constants.FileType.TABLE;
-        createPage(0xFFFFFFFF);
+        createPage(0xFFFFFFFF, Constants.PageType.TABLE_LEAF);
     }
 
     public static void main(String[] args) {
@@ -47,10 +47,11 @@ public class TableFile extends DatabaseFile{
                 tableFile.writeRecord(record, 0);
             }
             int numRecords = tableFile.getNumberOfCells(0);
+            int page = 0;
             for (int i = 0; i < numRecords; i++) {
                 tableFile.seek(i * 2 + 0x10);
                 int offset = tableFile.readShort();
-                Record record = tableFile.readRecord(0, offset);
+                Record record = tableFile.readRecord(page, offset);
                 System.out.println(record);
             }
         }
@@ -70,10 +71,20 @@ public class TableFile extends DatabaseFile{
     }
 
     public int splitPage(int pageNumber) throws IOException {
+        this.seek((long) pageNumber * pageSize);
+        Constants.Constants.PageType pageType = Constants.PageType.values()[this.readByte()];
         int parentPage = getParentPage(pageNumber);
-        int newPage = createPage(parentPage);
-        this.seek((long) pageNumber * pageSize + 0x06);
-        this.writeInt(pageNumber);
+        if (parentPage == 0xFFFFFFFF) {
+            parentPage = createPage(0xFFFFFFFF, Constants.PageType.TABLE_INTERIOR);
+            this.seek((long) pageNumber * pageSize + 0x0A);
+            this.writeInt(parentPage);
+        }
+        int newPage = createPage(parentPage, pageType);
+        writePagePointer(parentPage, newPage, getMaxRowId(pageNumber) + 1);
+        this.skipBytes(5);
+        if (pageType == Constants.PageType.TABLE_LEAF) {
+            this.writeInt(newPage);
+        }
         return newPage;
     }
 
@@ -84,6 +95,8 @@ public class TableFile extends DatabaseFile{
             page = splitPage(page);
             contentStart = setContentStart(page, cellSize);
         }
+        this.seek((long) page * pageSize + 0x06);
+        this.writeInt(pointer);
         this.seek((long) page * pageSize + contentStart);
         this.writeInt(rowId);
         this.writeInt(pointer);
@@ -121,7 +134,7 @@ public class TableFile extends DatabaseFile{
 
     private Record readRecord(int page, int offset) throws IOException {
         this.seek((long) page * pageSize + offset);
-        short recordSize = this.readShort();
+        this.readShort(); // Record size
         int rowId = this.readInt();
         byte numColumns = this.readByte();
         byte[] columns = new byte[numColumns];
