@@ -35,7 +35,7 @@ public class TableFile extends DatabaseFile{
                 System.out.println("Inserting row " + i);
                 int col1 = rand.nextInt(100);
                 System.out.println("\tcol1: " + col1);
-                String col2 = "test" + (char)(rand.nextInt(26) + 'a');
+                String col2 = "testajajajajajajajajajajajajajajajajajajajajajajajajaj" + (char)(rand.nextInt(26) + 'a');
                 System.out.println("\tcol2: " + col2);
                 double col3 = rand.nextDouble();
                 System.out.println("\tcol3: " + col3);
@@ -44,7 +44,7 @@ public class TableFile extends DatabaseFile{
                 testrow.add(col3);
                 Record record = new Record(testcol, testrow, i);
                 System.out.println("\tRecord size: " + record.getRecordSize());
-                tableFile.writeRecord(record, 0);
+                tableFile.appendRecord(record);
             }
             int numRecords = tableFile.getNumberOfCells(0);
             int page = 0;
@@ -60,19 +60,24 @@ public class TableFile extends DatabaseFile{
         }
 
     }
-
     public int getMaxRowId(int page) throws IOException {
         if (getNumberOfCells(page) <= 0){
             throw new IOException("Page is empty");
         }
+        this.seek((long) page * pageSize);
+        Constants.PageType pageType = Constants.PageType.fromValue(this.readByte());
         short contentStart = getContentStart(page);
         this.seek((long) page * pageSize + contentStart);
+        if (pageType == Constants.PageType.TABLE_LEAF) {
+            this.skipBytes(2);
+        }
         return this.readInt();
     }
 
     public int splitPage(int pageNumber) throws IOException {
         this.seek((long) pageNumber * pageSize);
-        Constants.Constants.PageType pageType = Constants.PageType.values()[this.readByte()];
+        byte pageTypeByte = this.readByte();
+        Constants.PageType pageType = Constants.PageType.fromValue(pageTypeByte);
         int parentPage = getParentPage(pageNumber);
         if (parentPage == 0xFFFFFFFF) {
             parentPage = createPage(0xFFFFFFFF, Constants.PageType.TABLE_INTERIOR);
@@ -90,11 +95,10 @@ public class TableFile extends DatabaseFile{
 
     public void writePagePointer(int page, int pointer, int rowId) throws IOException {
         short cellSize = 8;
-        short contentStart = setContentStart(page, cellSize);
-        if (contentStart + cellSize > pageSize) {
+        if (!canFitRecord(page, cellSize)) {
             page = splitPage(page);
-            contentStart = setContentStart(page, cellSize);
         }
+        short contentStart = setContentStart(page, cellSize);
         this.seek((long) page * pageSize + 0x06);
         this.writeInt(pointer);
         this.seek((long) page * pageSize + contentStart);
@@ -105,14 +109,14 @@ public class TableFile extends DatabaseFile{
     public void writeRecord(Record record, int page) throws IOException {
         short recordSize = record.getRecordSize();
         short cellSize = (short) (recordSize + 6);
-        short contentStart = this.setContentStart(page, cellSize);
-        if (contentStart + cellSize > pageSize) {
+        if (!canFitRecord(page, cellSize)) {
             page = splitPage(page);
         }
+        short contentStart = this.setContentStart(page, cellSize);
         short numberOfCells = incrementNumberOfCells(page);
         this.seek((long) pageSize * page + 0x0E + 2 * numberOfCells);
         this.writeShort(contentStart);
-        this.seek(contentStart);
+        this.seek((long) pageSize * page + contentStart);
         ArrayList<Constants.DataTypes> columns = record.getColumns();
         ArrayList<Object> values = record.getValues();
         this.writeShort(recordSize);
@@ -130,6 +134,22 @@ public class TableFile extends DatabaseFile{
                 case TEXT -> this.writeBytes((String) values.get(i));
             }
         }
+    }
+
+    private void appendRecord(Record record) throws IOException {
+        Constants.PageType pageType;
+        int nextPage = (int) (this.length() / pageSize) - 1;
+        while (true) {
+            this.seek((long) pageSize * nextPage);
+            pageType = Constants.PageType.fromValue(this.readByte());
+            if (pageType == Constants.PageType.TABLE_LEAF) {
+                break;
+            }
+            this.seek((long) pageSize * nextPage + 0x06);
+            nextPage = this.readInt();
+        }
+        System.out.println("Writing record to page " + nextPage);
+        writeRecord(record, nextPage);
     }
 
     private Record readRecord(int page, int offset) throws IOException {

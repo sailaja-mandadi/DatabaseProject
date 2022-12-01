@@ -7,42 +7,49 @@ import java.io.RandomAccessFile;
 
 public abstract class DatabaseFile extends RandomAccessFile {
     public Constants.FileType fileType;
-    public int pageSize = 512;
-    public int numberOfPages = 0;
+    public final int pageSize;
+    public int lastPageIndex = -1;
     public DatabaseFile(String name, String mode) throws java.io.FileNotFoundException {
         super(name, mode);
+        this.pageSize = Constants.PAGE_SIZE;
     }
     public int createPage(int parentPage, Constants.PageType pageType) throws IOException {
-        numberOfPages++;
-        this.setLength(pageSize);
-        this.writeByte(pageType.getValue());
-        this.writeByte(0x00); // Unused
-        this.writeShort(0x00); // Number of cells
-        this.writeShort(pageSize); // Start of content, no content yet so it's the end of the page
-        this.writeInt(0x00); // Rightmost child page if interior page, Right sibling page if leaf page
-        this.writeInt(parentPage); // Parent page
-        this.writeShort(0x00); // Unused
+        lastPageIndex++;
+        System.out.println("Creating page " + lastPageIndex + " with parent " + parentPage);
+        this.setLength((long) (lastPageIndex + 1) * pageSize);
+        this.seek((long) lastPageIndex * pageSize);
+        this.writeByte(pageType.getValue()); // Page type 0x00
+        this.writeByte(0x00); // Unused space 0x01
+        this.writeShort(0x00); // Number of cells 0x02
+        this.writeShort(pageSize); // Start of content, no content yet so it's the end of the page 0x04
+        this.writeInt(0xFFFFFFFF); // Rightmost child page if interior page, Right sibling page if leaf page 0x06
+        this.writeInt(parentPage); // Parent page 0x0A
+        this.writeShort(0x00); // Unused space 0x0E
         // Fill the rest of the page with 0x00
         while (this.getFilePointer() < pageSize) {
             this.writeByte(0x00);
         }
-        return numberOfPages;
+        return lastPageIndex;
     }
 
     public abstract int splitPage(int page) throws IOException;
-
-    public void jumpToPage(int pageNumber) throws IOException {
-        this.seek((long) pageNumber * pageSize);
-    }
 
     public short getContentStart(int page) throws IOException {
         this.seek((long) page * pageSize + 0x04);
         return this.readShort();
     }
 
-    public short getParentPage(int page) throws IOException {
+    public int getParentPage(int page) throws IOException {
         this.seek((long) page * pageSize + 0x0A);
-        return this.readShort();
+        return this.readInt();
+    }
+
+    public int getRootPage() throws IOException {
+        int currentPage = 0;
+        while (getParentPage(currentPage) != 0xFFFFFFFF) {
+            currentPage = getParentPage(currentPage);
+        }
+        return currentPage;
     }
 
     public short setContentStart(int page, short cellSize) throws IOException {
@@ -64,5 +71,11 @@ public abstract class DatabaseFile extends RandomAccessFile {
         this.seek((long) page * pageSize + 0x02);
         this.writeShort(numberOfCells + 1);
         return (short) (numberOfCells + 1);
+    }
+
+    public boolean canFitRecord(int page, int recordSize) throws IOException {
+        short numberOfCells = getNumberOfCells(page);
+        short headerSize = (short) (0x10 + 2 * numberOfCells);
+        return getContentStart(page) - recordSize >= headerSize;
     }
 }
