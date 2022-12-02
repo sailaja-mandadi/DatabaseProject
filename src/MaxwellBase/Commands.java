@@ -1,10 +1,14 @@
 package MaxwellBase;
 
+import Constants.Constants;
+
 import static java.lang.System.out;
 
 import java.io.RandomAccessFile;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.LinkedList;
+import java.util.Locale;
 
 public class Commands {
 
@@ -24,7 +28,7 @@ public class Commands {
         /* commandTokens is an array of Strings that contains one lexical token per array
          * element. The first token can be used to determine the type of command
          * The other tokens can be used to pass relevant parameters to each command-specific
-         * method inside each case statement
+         * method inside each case statemenut
          */
         ArrayList<String> commandTokens = new ArrayList<String>(Arrays.asList(userCommand.split(" ")));
 
@@ -131,9 +135,34 @@ public class Commands {
 
     public static void show(ArrayList<String> commandTokens) {
         System.out.println("Command: " + tokensToCommandString(commandTokens));
-        System.out.println("Stub: This is the show method");
+        //System.out.println("Stub: This is the show method");
+        if (commandTokens.get(1).toLowerCase() == "tables"){
+            //parsequery table_name column from catalog table
 
+        else{
+            //Error statement
+        }
         /* TODO: Your code goes here */
+    }
+
+    /**
+     *  Stub method for executing queries
+     */
+    public static void parseQuery(ArrayList<String> commandTokens) {
+        System.out.println("Command: " + tokensToCommandString(commandTokens));
+        ArrayList<String> columns = new ArrayList<>();
+        String tableName = new String();
+        // Where to be handled later
+        //System.out.println("Stub: This is the parseQuery method");
+        if(commandTokens.get(1) == "*"){
+            tableName=commandTokens.get(3);
+            //select column_names from catalog column table where table name = table name;
+            //all columns
+        }
+        else
+        {
+
+        }
     }
 
     /*
@@ -142,7 +171,14 @@ public class Commands {
     public static void parseInsert (ArrayList<String> commandTokens) {
         System.out.println("Command: " + tokensToCommandString(commandTokens));
         System.out.println("Stub: This is the insertRecord method");
+        ArrayList<Constants.DataTypes> columnDatatype = new ArrayList<>();
+        ArrayList<Object> values = new ArrayList<>();
+        // How to get row ID ?
+        // INSERT INTO Students ( name, ID) Values(sailaja, 4) ;
+        // INSERT INTO Students (sailaja,4);
+        // Adding column names to columns, values to values list
         /* TODO: Your code goes here */
+
     }
 
     public static void parseDelete(ArrayList<String> commandTokens) {
@@ -156,17 +192,12 @@ public class Commands {
      *  Stub method for dropping tables
      */
     public static void dropTable(ArrayList<String> commandTokens) {
+        // removing record from catalogue
         System.out.println("Command: " + tokensToCommandString(commandTokens));
         System.out.println("Stub: This is the dropTable method.");
     }
 
-    /**
-     *  Stub method for executing queries
-     */
-    public static void parseQuery(ArrayList<String> commandTokens) {
-        System.out.println("Command: " + tokensToCommandString(commandTokens));
-        System.out.println("Stub: This is the parseQuery method");
-    }
+
 
     /**
      *  Stub method for updating records

@@ -7,8 +7,8 @@ public class Utils {
      */
     public static void splashScreen() {
         System.out.println(printSeparator("-",80));
-        System.out.println("Welcome to MaxwellBase.MaxwellBase"); // Display the string.
-        System.out.println("MaxwellBase.MaxwellBase Version " + Settings.getVersion());
+        System.out.println("Welcome to MaxwellBase"); // Display the string.
+        System.out.println("MaxwellBase Version " + Settings.getVersion());
         System.out.println(Settings.getCopyright());
         System.out.println("\nType \"help;\" to display supported commands.");
         System.out.println(printSeparator("-",80));
