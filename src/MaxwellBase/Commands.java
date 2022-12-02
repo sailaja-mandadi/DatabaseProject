@@ -136,9 +136,9 @@ public class Commands {
     public static void show(ArrayList<String> commandTokens) {
         System.out.println("Command: " + tokensToCommandString(commandTokens));
         //System.out.println("Stub: This is the show method");
-        if (commandTokens.get(1).toLowerCase() == "tables"){
+        if (commandTokens.get(1).toLowerCase() == "tables") {
             //parsequery table_name column from catalog table
-
+        }
         else{
             //Error statement
         }
@@ -149,9 +149,12 @@ public class Commands {
      *  Stub method for executing queries
      */
     public static void parseQuery(ArrayList<String> commandTokens) {
+
         System.out.println("Command: " + tokensToCommandString(commandTokens));
         ArrayList<String> columns = new ArrayList<>();
         String tableName = new String();
+
+
         // Where to be handled later
         //System.out.println("Stub: This is the parseQuery method");
         if(commandTokens.get(1) == "*"){
@@ -161,6 +164,7 @@ public class Commands {
         }
         else
         {
+            
 
         }
     }

@@ -3,21 +3,20 @@ package MaxwellBase;
 import Constants.Constants;
 
 import java.io.IOException;
-import java.io.RandomAccessFile;
 import java.util.ArrayList;
 import java.util.Random;
 
 public class TableFile extends DatabaseFile{
     String tableName;
-    public TableFile(String name, String mode) throws IOException {
-        super(name, mode);
+    public TableFile(String name) throws IOException {
+        super(name);
         this.tableName = name;
         this.fileType = Constants.FileType.TABLE;
         createPage(0xFFFFFFFF, Constants.PageType.TABLE_LEAF);
     }
 
     public static void main(String[] args) {
-        try (TableFile tableFile = new TableFile("test.tbl", "rw")) {
+        try (TableFile tableFile = new TableFile("test.tbl")) {
             tableFile.seek(0);
             System.out.println("Page type: " + tableFile.readByte());
             tableFile.readByte();
@@ -95,7 +94,7 @@ public class TableFile extends DatabaseFile{
 
     public void writePagePointer(int page, int pointer, int rowId) throws IOException {
         short cellSize = 8;
-        if (!canFitRecord(page, cellSize)) {
+        if (!canFit(page, cellSize)) {
             page = splitPage(page);
         }
         short contentStart = setContentStart(page, cellSize);
@@ -109,7 +108,7 @@ public class TableFile extends DatabaseFile{
     public void writeRecord(Record record, int page) throws IOException {
         short recordSize = record.getRecordSize();
         short cellSize = (short) (recordSize + 6);
-        if (!canFitRecord(page, cellSize)) {
+        if (!canFit(page, cellSize)) {
             page = splitPage(page);
         }
         short contentStart = this.setContentStart(page, cellSize);
@@ -152,6 +151,15 @@ public class TableFile extends DatabaseFile{
         writeRecord(record, nextPage);
     }
 
+    public Record getRecord(int rowId) throws IOException {
+        int rootPage = getRootPage();
+        this.seek((long) rootPage * pageSize);
+        Constants.PageType pageType = Constants.PageType.fromValue(this.readByte());
+
+
+        return
+    }
+
     private Record readRecord(int page, int offset) throws IOException {
         this.seek((long) page * pageSize + offset);
         this.readShort(); // Record size
@@ -189,4 +197,32 @@ public class TableFile extends DatabaseFile{
         }
         return new Record(columnTypes, values, rowId);
     }
+
+    public ArrayList<Record> search(int columnIndex, String value, String operator) throws IOException {
+        ArrayList<Record> records = new ArrayList<>();
+
+        int currentPage = 0;
+        while (true) {
+            this.seek((long) currentPage * pageSize);
+            Constants.PageType pageType = Constants.PageType.fromValue(this.readByte());
+            if (pageType == Constants.PageType.TABLE_LEAF) {
+                int numberOfCells = getNumberOfCells(currentPage);
+                int contentStart = getContentStart(currentPage);
+                int currentOffset = contentStart;
+                for (int i = 0; i < numberOfCells; i++) {
+                    this.seek((long) currentPage * pageSize + currentOffset);
+                    Record record = readRecord(currentPage, currentOffset);
+                    if (record.compare(columnIndex, value, operator)) {
+                        records.add(record);
+                    }
+                    currentOffset += record.getRecordSize() + 6;
+                }
+            }
+            this.seek((long) currentPage * pageSize + 0x06);
+            currentPage = this.readInt();
+        }
+
+        return records;
+    }
+
 }

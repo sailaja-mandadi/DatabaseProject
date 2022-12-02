@@ -4,13 +4,14 @@ import Constants.Constants;
 
 import java.io.IOException;
 import java.io.RandomAccessFile;
+import java.util.ArrayList;
 
 public abstract class DatabaseFile extends RandomAccessFile {
     public Constants.FileType fileType;
     public final int pageSize;
     public int lastPageIndex = -1;
-    public DatabaseFile(String name, String mode) throws java.io.FileNotFoundException {
-        super(name, mode);
+    public DatabaseFile(String name) throws java.io.FileNotFoundException {
+        super(name, "rw");
         this.pageSize = Constants.PAGE_SIZE;
     }
     public int createPage(int parentPage, Constants.PageType pageType) throws IOException {
@@ -73,9 +74,10 @@ public abstract class DatabaseFile extends RandomAccessFile {
         return (short) (numberOfCells + 1);
     }
 
-    public boolean canFitRecord(int page, int recordSize) throws IOException {
+    public boolean canFit(int page, int recordSize) throws IOException {
         short numberOfCells = getNumberOfCells(page);
         short headerSize = (short) (0x10 + 2 * numberOfCells);
         return getContentStart(page) - recordSize >= headerSize;
     }
+
 }

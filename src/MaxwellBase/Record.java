@@ -74,4 +74,33 @@ public class Record {
         }
         return sb.toString();
     }
+
+    public boolean compare(int columnIndex, String value, String operator) {
+        Constants.DataTypes columnType = columns.get(columnIndex);
+        switch (columnType) {
+            case TINYINT, SMALLINT, INT, BIGINT, YEAR, TIME, DATE, DATETIME:
+                long longValue = Long.parseLong(value);
+                long columnValue = (long) values.get(columnIndex);
+
+        }
+    }
+
+    public boolean compareWholeNumber(long value, long columnValue, String operator) {
+        switch (operator) {
+            case "=":
+                return value == columnValue;
+            case ">":
+                return value > columnValue;
+            case ">=":
+                return value >= columnValue;
+            case "<":
+                return value < columnValue;
+            case "<=":
+                return value <= columnValue;
+            case "!=":
+                return value != columnValue;
+            default:
+                return false;
+        }
+    }
 }
