@@ -27,8 +27,7 @@ public class Table {
         // If it doesn't, use tableFile to search
         File file = new File(tableName + "." + columnName + ".ndx");
         if (file.exists()) {
-            try {
-                IndexFile indexFile = new IndexFile(this, columnName);
+            try (IndexFile indexFile = new IndexFile(this, columnName)) {
                 ArrayList<Integer> rowIds = indexFile.search(value, operator);
                 ArrayList<Record> records = new ArrayList<>();
                 for (int rowId : rowIds) {

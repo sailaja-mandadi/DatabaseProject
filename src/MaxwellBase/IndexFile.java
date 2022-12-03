@@ -31,12 +31,27 @@ public class IndexFile extends DatabaseFile{
 
     /**
      * Split the page into two pages
-     * Move half of the records to the new page
-     * @param page The page to split
+     * Move half of the records to the new page and middle record to the parent page
+     * @param pageNumber The page to split
      * @return The new page that was created
      */
-    public int splitPage(int page) throws IOException {
-        return 0;
+    public int splitPage(int pageNumber, Object splittingValue) throws IOException {
+        this.seek((long) pageNumber * pageSize);
+        byte pageTypeByte = this.readByte();
+        Constants.PageType pageType = Constants.PageType.fromValue(pageTypeByte);
+
+        int parentPage = getParentPage(pageNumber);
+        if (parentPage == 0xFFFFFFFF) {
+            parentPage = createPage(0xFFFFFFFF, Constants.PageType.INDEX_INTERIOR);
+            this.seek((long) pageNumber * pageSize + 0x0A);
+            this.writeInt(parentPage);
+        }
+
+        int newPage = createPage(parentPage, pageType);
+        int middleRecord = getNumberOfCells(pageNumber) / 2;
+        this.seek((long) pageNumber * pageSize + 0x10 + middleRecord * 2);
+        int middleRecordOffset = this.readShort();
+
     }
 
     /**
@@ -60,6 +75,9 @@ public class IndexFile extends DatabaseFile{
         short cellSize = (short) (2 + valueSize + 4 * rowIds.size());
         if (valueSize == -1) {
             cellSize += ((String) value).length() + 1;
+        }
+        if (shouldSplit(page, cellSize)) {
+            page = splitPage(page);
         }
         int contentStart = setContentStart(page, cellSize);
         int numberOfCells = incrementNumberOfCells(page);
@@ -86,6 +104,7 @@ public class IndexFile extends DatabaseFile{
             this.writeInt(rowId);
         }
     }
+
 
     /**
      * Update the index file after a record is modified

@@ -20,7 +20,10 @@ public class Record {
         for (int i = 0; i < columns.size(); i++) {
             var column = columns.get(i);
             var value = values.get(i);
-            if (column == Constants.DataTypes.TINYINT) {
+            if (value == null) {
+                column = Constants.DataTypes.NULL;
+            }
+            else if (column == Constants.DataTypes.TINYINT) {
                 recordSize += 1;
             } else if (column == Constants.DataTypes.SMALLINT) {
                 recordSize += 2;
@@ -81,111 +84,10 @@ public class Record {
             return true;
         }
         Constants.DataTypes columnType = columns.get(columnIndex);
-        if (columnType == Constants.DataTypes.NULL || columnType == Constants.DataTypes.UNUSED) {
+        if (columnType == Constants.DataTypes.NULL || value == null) {
             return false;
         }
         Object columnValue = values.get(columnIndex);
-        switch (operator) {
-            case "=" -> {
-                switch (columnType){
-                    case TINYINT, SMALLINT, INT, BIGINT, YEAR, TIME -> {
-                        return (Long) columnValue == Long.parseLong(value);
-                    }
-                    case DATE, DATETIME -> {
-                        return Long.compareUnsigned((long) columnValue, Long.parseUnsignedLong(value)) == 0;
-                    }
-                    case FLOAT, DOUBLE -> {
-                        return (Double) columnValue == Double.parseDouble(value);
-                    }
-                    case TEXT -> {
-                        return ((String) columnValue).compareTo(value) == 0;
-                    }
-                }
-            }
-            case "<>" -> {
-                switch (columnType){
-                    case TINYINT, SMALLINT, INT, BIGINT, YEAR, TIME -> {
-                        return (Long) columnValue != Long.parseLong(value);
-                    }
-                    case DATE, DATETIME -> {
-                        return Long.compareUnsigned((long) columnValue, Long.parseUnsignedLong(value)) != 0;
-                    }
-                    case FLOAT, DOUBLE -> {
-                        return (Double) columnValue != Double.parseDouble(value);
-                    }
-                    case TEXT -> {
-                        return ((String) columnValue).compareTo(value) != 0;
-                    }
-                }
-            }
-            case ">" -> {
-                switch (columnType){
-                    case TINYINT, SMALLINT, INT, BIGINT, YEAR, TIME -> {
-                        return (Long) columnValue > Long.parseLong(value);
-                    }
-                    case DATE, DATETIME -> {
-                        return Long.compareUnsigned((long) columnValue, Long.parseUnsignedLong(value)) > 0;
-                    }
-                    case FLOAT, DOUBLE -> {
-                        return (Double) columnValue > Double.parseDouble(value);
-                    }
-                    case TEXT -> {
-                        return ((String) columnValue).compareTo(value) > 0;
-                    }
-                }
-            }
-            case "<" -> {
-                switch (columnType){
-                    case TINYINT, SMALLINT, INT, BIGINT, YEAR, TIME -> {
-                        return (Long) columnValue < Long.parseLong(value);
-                    }
-                    case DATE, DATETIME -> {
-                        return Long.compareUnsigned((long) columnValue, Long.parseUnsignedLong(value)) > 0;
-                    }
-                    case FLOAT, DOUBLE -> {
-                        return (Double) columnValue < Double.parseDouble(value);
-                    }
-                    case TEXT -> {
-                        return ((String) columnValue).compareTo(value) < 0;
-                    }
-                }
-            }
-            case ">=" -> {
-                switch (columnType){
-                    case TINYINT, SMALLINT, INT, BIGINT, YEAR, TIME -> {
-                        return (Long) columnValue >= Long.parseLong(value);
-                    }
-                    case DATE, DATETIME -> {
-                        return Long.compareUnsigned((long) columnValue, Long.parseUnsignedLong(value)) >= 0;
-                    }
-                    case FLOAT, DOUBLE -> {
-                        return (Double) columnValue >= Double.parseDouble(value);
-                    }
-                    case TEXT -> {
-                        return ((String) columnValue).compareTo(value) >= 0;
-                    }
-                }
-            }
-            case "<=" -> {
-                switch (columnType){
-                    case TINYINT, SMALLINT, INT, BIGINT, YEAR, TIME -> {
-                        return (Long) columnValue <= Long.parseLong(value);
-                    }
-                    case DATE, DATETIME -> {
-                        return Long.compareUnsigned((long) columnValue, Long.parseUnsignedLong(value)) <= 0;
-                    }
-                    case FLOAT, DOUBLE -> {
-                        return (Double) columnValue <= Double.parseDouble(value);
-                    }
-                    case TEXT -> {
-                        return ((String) columnValue).compareTo(value) <= 0;
-                    }
-                }
-            }
-            default -> {
-                return false;
-            }
-        }
-        return false;
+        return DataFuntions.compare(columnType, columnValue, value, operator);
     }
 }

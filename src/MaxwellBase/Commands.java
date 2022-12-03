@@ -172,38 +172,113 @@ public class Commands {
             return;
         }
         int i = 1;
-        if(commandTokens.get(i) == "*")
+        if(commandTokens.get(i) == "*") {
             allColumns = true;
+            i++;
+        }
         else {
-            while(!(commandTokens.get(i).equals("FROM")) && i < queryLength ){
-                columns.add(commandTokens.get(i));
+            while ( i < queryLength && !(commandTokens.get(i).toLowerCase().equals("FROM")) ) {
+                if(!(commandTokens.get(i).toLowerCase().equals(",")))columns.add(commandTokens.get(i));
                 i++;
             }
-            if(i == queryLength) {
+            if (i == queryLength) {
                 System.out.println("Query is incorrect.\nType \"help;\" to display supported commands.");
                 return;
             }
         }
-
-
-
+        i++;
+        if (i == queryLength) {
+            System.out.println("Query is incorrect.\nType \"help;\" to display supported commands.");
+            return;
+        }
+        tableName = commandTokens.get(i);
         Table table  = new Table(tableName);
-
-
-            tableName=commandTokens.get(3);
+        i++;
+        if(queryLength == i) {
             try {
-                result = table.search(null,null,null);
+                //System.out.println("")
+                result = table.search(null, null, null);
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }
-
-        if(commandTokens.get(1) == "*"){
         }
-        else
-        {
-            
+        else if(commandTokens.get(i).toLowerCase().equals("WHERE")){
+            i++;
+            if (i+3 != queryLength || i+4 != queryLength) {
+                System.out.println("Query is incorrect.\nType \"help;\" to display supported commands.");
+                return;
+            }
+            else{
+                if(commandTokens.get(i).toLowerCase().equals("NOT")) {
+                    columnName = commandTokens.get(i + 1);
+                    value = commandTokens.get(i + 3);
+                    operator = commandTokens.get(i + 2);
+                    switch (operator) {
+                        case "=" -> {
+                            try {
+                                result = table.search(columnName,value,"<>");
+                            } catch (IOException e) {
+                                throw new RuntimeException(e);
+                            }
+                        }
+                        case "<>" -> {
+                            try {
+                                result = table.search(columnName,value,"=");
+                            } catch (IOException e) {
+                                throw new RuntimeException(e);
+                            }
+                        }
+                        case ">" -> {
+                            try {
+                                result = table.search(columnName,value,"<=");
+                            } catch (IOException e) {
+                                throw new RuntimeException(e);
+                            }
+                        }
+                        case "<" -> {
+                            try {
+                                result = table.search(columnName,value,">=");
+                            } catch (IOException e) {
+                                throw new RuntimeException(e);
+                            }
+                        }
+                        case ">=" -> {
+                            try {
+                                result = table.search(columnName,value,"<");
+                            } catch (IOException e) {
+                                throw new RuntimeException(e);
+                            }
+                        }
+                        case "<=" -> {
+                            try {
+                                result = table.search(columnName,value,">");
+                            } catch (IOException e) {
+                                throw new RuntimeException(e);
+                            }
+                        }
+                        default -> {
+                            System.out.println("Operator is incorrect.\nType \"help;\" to display supported commands.");
+                        }
+                    }
+                }
+                else{
+                    columnName = commandTokens.get(i);
+                    operator =  commandTokens.get(i+1);
+                    value =  commandTokens.get(i+2);
+                    try {
+                        result = table.search(columnName,value,operator);
+                    } catch (IOException e) {
+                        throw new RuntimeException(e);
+                    }
+                }
+
+            }
+
+
+
 
         }
+
     }
 
     /*

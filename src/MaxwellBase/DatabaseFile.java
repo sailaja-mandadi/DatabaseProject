@@ -4,7 +4,6 @@ import Constants.Constants;
 
 import java.io.IOException;
 import java.io.RandomAccessFile;
-import java.util.ArrayList;
 
 public abstract class DatabaseFile extends RandomAccessFile {
     public Constants.FileType fileType;
@@ -35,8 +34,6 @@ public abstract class DatabaseFile extends RandomAccessFile {
         }
         return lastPageIndex;
     }
-
-    public abstract int splitPage(int page) throws IOException;
 
     public short getContentStart(int page) throws IOException {
         this.seek((long) page * pageSize + 0x04);
@@ -77,10 +74,10 @@ public abstract class DatabaseFile extends RandomAccessFile {
         return (short) (numberOfCells + 1);
     }
 
-    public boolean canFit(int page, int recordSize) throws IOException {
+    public boolean shouldSplit(int page, int cellSize) throws IOException {
         short numberOfCells = getNumberOfCells(page);
         short headerSize = (short) (0x10 + 2 * numberOfCells);
-        return getContentStart(page) - recordSize >= headerSize;
+        return getContentStart(page) - cellSize < headerSize;
     }
 
 }
