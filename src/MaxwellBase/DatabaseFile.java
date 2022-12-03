@@ -6,7 +6,6 @@ import java.io.IOException;
 import java.io.RandomAccessFile;
 
 public abstract class DatabaseFile extends RandomAccessFile {
-    public Constants.FileType fileType;
     public final int pageSize;
     public int lastPageIndex = -1;
     public DatabaseFile(String name, Constants.Constants.PageType pageType) throws IOException{
@@ -76,7 +75,7 @@ public abstract class DatabaseFile extends RandomAccessFile {
 
     public boolean shouldSplit(int page, int cellSize) throws IOException {
         short numberOfCells = getNumberOfCells(page);
-        short headerSize = (short) (0x10 + 2 * numberOfCells);
+        short headerSize = (short) (0x10 + (2 * numberOfCells + 1));
         return getContentStart(page) - cellSize < headerSize;
     }
 
