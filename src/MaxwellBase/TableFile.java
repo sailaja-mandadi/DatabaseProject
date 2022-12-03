@@ -2,6 +2,7 @@ package MaxwellBase;
 
 import Constants.Constants;
 
+import javax.swing.*;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Random;
@@ -72,6 +73,8 @@ public class TableFile extends DatabaseFile{
         this.seek((long) page * pageSize + contentStart);
         if (pageType == Constants.PageType.TABLE_LEAF) {
             this.skipBytes(2);
+        } else if (pageType == Constants.PageType.TABLE_INTERIOR) {
+            this.skipBytes(4);
         }
         return this.readInt();
     }
@@ -118,8 +121,8 @@ public class TableFile extends DatabaseFile{
         this.seek((long) page * pageSize + 0x06 + numCells * 2);
         this.writeInt(contentStart);
         this.seek((long) page * pageSize + contentStart);
-        this.writeInt(rowId);
         this.writeInt(pointer);
+        this.writeInt(rowId);
     }
 
     public void writeRecord(Record record, int page) throws IOException {
@@ -188,36 +191,43 @@ public class TableFile extends DatabaseFile{
             int low = 0; // L
             int high = numCells - 1; // R
             int currentRowId = -1;
-            int lastRowId = -1;
-            while (low <= high /*currentRowId != rowId*/) {
+            while (low < high /*currentRowId != rowId*/) {
                 // binary search over cells
                 // 0x10 location of cells in the page where each cell location = 2 byte
                 this.seek((long) currentPage * pageSize + 0x10 + 2 * currentCell);
                 int offset = this.readShort(); //page offset: location of row as # of bytes from beg. of page
                 this.seek((long) currentPage * pageSize + offset);
-                if (pageType == Constants.PageType.TABLE_INTERIOR) {
-                    this.skipBytes(2);
-                    lastRowId = currentRowId;
-                }
-                currentRowId = this.readInt();
 
-                //currentRowId = math.floor((low + high) / 2);
-                if (Arr[currentRowId] < rowId){
-                    low = currentRowId + 1; // + 1 as to the right
-                }
-                else if ( Arr[currentRowId] > rowId)
-                {
-                    high = currentRowId - 1; // - 1 as in one cell to the left
-                }
-                else {
-                    currentRowId = rowId;
+                if (pageType == Constants.PageType.TABLE_INTERIOR) {
+                    this.skipBytes(4);
+                    currentRowId = this.readInt();
+                    if (currentRowId < rowId){
+                        low = currentCell; // + 1 as to the right
+                    }
+                    else if ( currentRowId > rowId)
+                    {
+                        high = currentCell - 1; // - 1 as in one cell to the left
+                    }
+                    currentCell = (low + high) / 2;
+                } else if (pageType == Constants.PageType.TABLE_LEAF) {
+                    this.skipBytes(2);
+                    currentRowId = this.readInt();
+                    if (currentRowId < rowId){
+                        low = currentCell + 1; // + 1 as to the right
+                    }
+                    else if ( currentRowId > rowId)
+                    {
+                        high = currentCell - 1; // - 1 as in one cell to the left
+                    }
+                    currentCell = (low + high) / 2;
                 }
             }
-            // currentRowId stays -1, meaning row is not found.
+            if (pageType == Constants.PageType.TABLE_LEAF) {
+                return -1; // not found
+            } else if (pageType == Constants.PageType.TABLE_INTERIOR) {
+                this.seek((long) );
+            }
         }
-
-
-        return
     }
 
     /**
@@ -282,7 +292,7 @@ public class TableFile extends DatabaseFile{
             this.seek((long) currentPage * pageSize);
             pageType = Constants.PageType.fromValue(this.readByte());
             int contentStart = getContentStart(currentPage);
-            this.seek((long) currentPage * pageSize + contentStart + 2);
+            this.seek((long) currentPage * pageSize + contentStart + 4);
             currentPage = this.readInt();
         }
         // Iterate over all records in the leaf pages
