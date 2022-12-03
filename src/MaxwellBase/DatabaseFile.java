@@ -10,13 +10,16 @@ public abstract class DatabaseFile extends RandomAccessFile {
     public Constants.FileType fileType;
     public final int pageSize;
     public int lastPageIndex = -1;
-    public DatabaseFile(String name) throws java.io.FileNotFoundException {
+    public DatabaseFile(String name, Constants.Constants.PageType pageType) throws IOException{
         super(name, "rw");
         this.pageSize = Constants.PAGE_SIZE;
+        // If the file is empty, write the first page
+        if (this.length() == 0) {
+            this.createPage(0xFFFFFFFF, pageType);
+        }
     }
     public int createPage(int parentPage, Constants.PageType pageType) throws IOException {
         lastPageIndex++;
-        System.out.println("Creating page " + lastPageIndex + " with parent " + parentPage);
         this.setLength((long) (lastPageIndex + 1) * pageSize);
         this.seek((long) lastPageIndex * pageSize);
         this.writeByte(pageType.getValue()); // Page type 0x00

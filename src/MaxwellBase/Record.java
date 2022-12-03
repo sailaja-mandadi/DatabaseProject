@@ -38,6 +38,7 @@ public class Record {
             } else if (column == Constants.DataTypes.TEXT) {
                 recordSize += ((String) value).length();
             }
+
             if (column != Constants.DataTypes.TEXT) {
                 header[i + 1] = (byte) column.ordinal();
             } else {
@@ -76,31 +77,115 @@ public class Record {
     }
 
     public boolean compare(int columnIndex, String value, String operator) {
+        if (columnIndex == -1 && value == null && operator == null) {
+            return true;
+        }
         Constants.DataTypes columnType = columns.get(columnIndex);
-        switch (columnType) {
-            case TINYINT, SMALLINT, INT, BIGINT, YEAR, TIME, DATE, DATETIME:
-                long longValue = Long.parseLong(value);
-                long columnValue = (long) values.get(columnIndex);
-
+        if (columnType == Constants.DataTypes.NULL || columnType == Constants.DataTypes.UNUSED) {
+            return false;
         }
-    }
-
-    public boolean compareWholeNumber(long value, long columnValue, String operator) {
+        Object columnValue = values.get(columnIndex);
         switch (operator) {
-            case "=":
-                return value == columnValue;
-            case ">":
-                return value > columnValue;
-            case ">=":
-                return value >= columnValue;
-            case "<":
-                return value < columnValue;
-            case "<=":
-                return value <= columnValue;
-            case "!=":
-                return value != columnValue;
-            default:
+            case "=" -> {
+                switch (columnType){
+                    case TINYINT, SMALLINT, INT, BIGINT, YEAR, TIME -> {
+                        return (Long) columnValue == Long.parseLong(value);
+                    }
+                    case DATE, DATETIME -> {
+                        return Long.compareUnsigned((long) columnValue, Long.parseUnsignedLong(value)) == 0;
+                    }
+                    case FLOAT, DOUBLE -> {
+                        return (Double) columnValue == Double.parseDouble(value);
+                    }
+                    case TEXT -> {
+                        return ((String) columnValue).compareTo(value) == 0;
+                    }
+                }
+            }
+            case "<>" -> {
+                switch (columnType){
+                    case TINYINT, SMALLINT, INT, BIGINT, YEAR, TIME -> {
+                        return (Long) columnValue != Long.parseLong(value);
+                    }
+                    case DATE, DATETIME -> {
+                        return Long.compareUnsigned((long) columnValue, Long.parseUnsignedLong(value)) != 0;
+                    }
+                    case FLOAT, DOUBLE -> {
+                        return (Double) columnValue != Double.parseDouble(value);
+                    }
+                    case TEXT -> {
+                        return ((String) columnValue).compareTo(value) != 0;
+                    }
+                }
+            }
+            case ">" -> {
+                switch (columnType){
+                    case TINYINT, SMALLINT, INT, BIGINT, YEAR, TIME -> {
+                        return (Long) columnValue > Long.parseLong(value);
+                    }
+                    case DATE, DATETIME -> {
+                        return Long.compareUnsigned((long) columnValue, Long.parseUnsignedLong(value)) > 0;
+                    }
+                    case FLOAT, DOUBLE -> {
+                        return (Double) columnValue > Double.parseDouble(value);
+                    }
+                    case TEXT -> {
+                        return ((String) columnValue).compareTo(value) > 0;
+                    }
+                }
+            }
+            case "<" -> {
+                switch (columnType){
+                    case TINYINT, SMALLINT, INT, BIGINT, YEAR, TIME -> {
+                        return (Long) columnValue < Long.parseLong(value);
+                    }
+                    case DATE, DATETIME -> {
+                        return Long.compareUnsigned((long) columnValue, Long.parseUnsignedLong(value)) > 0;
+                    }
+                    case FLOAT, DOUBLE -> {
+                        return (Double) columnValue < Double.parseDouble(value);
+                    }
+                    case TEXT -> {
+                        return ((String) columnValue).compareTo(value) < 0;
+                    }
+                }
+            }
+            case ">=" -> {
+                switch (columnType){
+                    case TINYINT, SMALLINT, INT, BIGINT, YEAR, TIME -> {
+                        return (Long) columnValue >= Long.parseLong(value);
+                    }
+                    case DATE, DATETIME -> {
+                        return Long.compareUnsigned((long) columnValue, Long.parseUnsignedLong(value)) >= 0;
+                    }
+                    case FLOAT, DOUBLE -> {
+                        return (Double) columnValue >= Double.parseDouble(value);
+                    }
+                    case TEXT -> {
+                        return ((String) columnValue).compareTo(value) >= 0;
+                    }
+                }
+            }
+            case "<=" -> {
+                switch (columnType){
+                    case TINYINT, SMALLINT, INT, BIGINT, YEAR, TIME -> {
+                        return (Long) columnValue <= Long.parseLong(value);
+                    }
+                    case DATE, DATETIME -> {
+                        return Long.compareUnsigned((long) columnValue, Long.parseUnsignedLong(value)) <= 0;
+                    }
+                    case FLOAT, DOUBLE -> {
+                        return (Double) columnValue <= Double.parseDouble(value);
+                    }
+                    case TEXT -> {
+                        return ((String) columnValue).compareTo(value) <= 0;
+                    }
+                }
+            }
+            default -> {
                 return false;
+            }
         }
+        return false;
     }
 }

@@ -21,18 +21,18 @@ public class Table {
         }
     }
 
-    public ArrayList<Record> search(String columnName, String value, String operator) {
+    public ArrayList<Record> search(String columnName, String value, String operator) throws IOException{
         // Check if index exists for columnName
         // If it does, use index to search
         // If it doesn't, use tableFile to search
         File file = new File(tableName + "." + columnName + ".ndx");
         if (file.exists()) {
             try {
-                IndexFile indexFile = new IndexFile(tableName + "." + columnName + ".ndx");
+                IndexFile indexFile = new IndexFile(this, columnName);
                 ArrayList<Integer> rowIds = indexFile.search(value, operator);
                 ArrayList<Record> records = new ArrayList<>();
                 for (int rowId : rowIds) {
-                    records.add(tableFile.readRecord(rowId));
+                    records.add(tableFile.getRecord(rowId));
                 }
                 return records;
             } catch (IOException e) {
@@ -40,13 +40,18 @@ public class Table {
             }
         }
         else {
-            int columnIndex = columnNames.indexOf(columnName);
+            int columnIndex;
+            if (columnName != null) {
+                columnIndex = columnNames.indexOf(columnName);
+            } else {
+                columnIndex = -1;
+            }
             return tableFile.search(columnIndex, value, operator);
         }
+    }
 
-
-
-        return null;
+    public Constants.Constants.DataTypes getColumnType(String columnName) {
+        return columnTypes.get(columnNames.indexOf(columnName));
     }
 
 

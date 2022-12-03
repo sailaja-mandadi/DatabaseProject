@@ -7,12 +7,9 @@ import java.util.ArrayList;
 import java.util.Random;
 
 public class TableFile extends DatabaseFile{
-    String tableName;
-    public TableFile(String name) throws IOException {
-        super(name);
-        this.tableName = name;
-        this.fileType = Constants.FileType.TABLE;
-        createPage(0xFFFFFFFF, Constants.PageType.TABLE_LEAF);
+
+    public TableFile(String tableName) throws IOException {
+        super(tableName + ".tbl", Constants.PageType.TABLE_LEAF);
     }
 
     public static void main(String[] args) {
@@ -59,6 +56,12 @@ public class TableFile extends DatabaseFile{
         }
 
     }
+
+    /**
+     * Find the rowid of the last record on a page
+     * @param page the page to search
+     * @return the rowid of the last record on the page
+     */
     public int getMaxRowId(int page) throws IOException {
         if (getNumberOfCells(page) <= 0){
             throw new IOException("Page is empty");
@@ -73,6 +76,13 @@ public class TableFile extends DatabaseFile{
         return this.readInt();
     }
 
+    /**
+     * Split a page into two pages
+     * No records are moved, this is a b+1 tree
+     * If root page is split, a new root page is created
+     * @param pageNumber the page to split
+     * @return the page number of the new page
+     */
     public int splitPage(int pageNumber) throws IOException {
         this.seek((long) pageNumber * pageSize);
         byte pageTypeByte = this.readByte();
@@ -92,14 +102,21 @@ public class TableFile extends DatabaseFile{
         return newPage;
     }
 
+    /**
+     * Write a page pointer to an interior page
+     * @param page interior page to write to
+     * @param pointer page number of the child page
+     * @param rowId smallest rowid of the child page
+     */
     public void writePagePointer(int page, int pointer, int rowId) throws IOException {
         short cellSize = 8;
         if (!canFit(page, cellSize)) {
             page = splitPage(page);
         }
         short contentStart = setContentStart(page, cellSize);
-        this.seek((long) page * pageSize + 0x06);
-        this.writeInt(pointer);
+        int numCells = getNumberOfCells(page);
+        this.seek((long) page * pageSize + 0x06 + numCells * 2);
+        this.writeInt(contentStart);
         this.seek((long) page * pageSize + contentStart);
         this.writeInt(rowId);
         this.writeInt(pointer);
@@ -157,9 +174,58 @@ public class TableFile extends DatabaseFile{
         Constants.PageType pageType = Constants.PageType.fromValue(this.readByte());
 
 
+
         return
     }
 
+    public int findRecord(int rowId) throws IOException{
+        int currentPage = getRootPage();
+        while (true) {
+            this.seek((long) currentPage * pageSize);
+            Constants.PageType pageType = Constants.PageType.fromValue(this.readByte());
+            int numCells = getNumberOfCells(currentPage);
+            int currentCell = numCells / 2; // mid
+            int low = 0; // L
+            int high = numCells - 1; // R
+            int currentRowId = -1;
+            int lastRowId = -1;
+            while (low <= high /*currentRowId != rowId*/) {
+                // binary search over cells
+                // 0x10 location of cells in the page where each cell location = 2 byte
+                this.seek((long) currentPage * pageSize + 0x10 + 2 * currentCell);
+                int offset = this.readShort(); //page offset: location of row as # of bytes from beg. of page
+                this.seek((long) currentPage * pageSize + offset);
+                if (pageType == Constants.PageType.TABLE_INTERIOR) {
+                    this.skipBytes(2);
+                    lastRowId = currentRowId;
+                }
+                currentRowId = this.readInt();
+
+                //currentRowId = math.floor((low + high) / 2);
+                if (Arr[currentRowId] < rowId){
+                    low = currentRowId + 1; // + 1 as to the right
+                }
+                else if ( Arr[currentRowId] > rowId)
+                {
+                    high = currentRowId - 1; // - 1 as in one cell to the left
+                }
+                else {
+                    currentRowId = rowId;
+                }
+            }
+            // currentRowId stays -1, meaning row is not found.
+        }
+
+
+        return
+    }
+
+    /**
+     * Read a record
+     * @param page page number of the record
+     * @param offset offset of the record on the page
+     * @return Record object
+     */
     private Record readRecord(int page, int offset) throws IOException {
         this.seek((long) page * pageSize + offset);
         this.readShort(); // Record size
@@ -198,24 +264,38 @@ public class TableFile extends DatabaseFile{
         return new Record(columnTypes, values, rowId);
     }
 
+    /**
+     * Search for all records that match the given condition
+     * @param columnIndex index of the column to check
+     * @param value value to compare against
+     * @param operator type of comparison
+     * @return List of records that match the condition
+     */
     public ArrayList<Record> search(int columnIndex, String value, String operator) throws IOException {
         ArrayList<Record> records = new ArrayList<>();
 
-        int currentPage = 0;
-        while (true) {
+        int currentPage = getRootPage();
+        this.seek((long) currentPage * pageSize);
+        Constants.PageType pageType = Constants.PageType.fromValue(this.readByte());
+        // Go to first leaf page
+        while (pageType != Constants.PageType.TABLE_LEAF) {
             this.seek((long) currentPage * pageSize);
-            Constants.PageType pageType = Constants.PageType.fromValue(this.readByte());
-            if (pageType == Constants.PageType.TABLE_LEAF) {
-                int numberOfCells = getNumberOfCells(currentPage);
-                int contentStart = getContentStart(currentPage);
-                int currentOffset = contentStart;
-                for (int i = 0; i < numberOfCells; i++) {
-                    this.seek((long) currentPage * pageSize + currentOffset);
-                    Record record = readRecord(currentPage, currentOffset);
-                    if (record.compare(columnIndex, value, operator)) {
-                        records.add(record);
-                    }
-                    currentOffset += record.getRecordSize() + 6;
+            pageType = Constants.PageType.fromValue(this.readByte());
+            int contentStart = getContentStart(currentPage);
+            this.seek((long) currentPage * pageSize + contentStart + 2);
+            currentPage = this.readInt();
+        }
+        // Iterate over all records in the leaf pages
+        while (currentPage != 0xFFFFFFFF) {
+            this.seek((long) currentPage * pageSize);
+            int numberOfCells = getNumberOfCells(currentPage);
+            // Iterate over all records in the current page
+            for (int i = 0; i < numberOfCells; i++) {
+                this.seek((long) currentPage * pageSize + 0x10 + 2 * i);
+                int currentOffset = this.readInt();
+                Record record = readRecord(currentPage, currentOffset);
+                if (record.compare(columnIndex, value, operator)) {
+                    records.add(record);
                 }
             }
             this.seek((long) currentPage * pageSize + 0x06);

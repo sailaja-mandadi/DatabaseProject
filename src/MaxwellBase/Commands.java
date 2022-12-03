@@ -4,7 +4,9 @@ import Constants.Constants;
 
 import static java.lang.System.out;
 
+import java.io.IOException;
 import java.io.RandomAccessFile;
+import java.lang.reflect.Array;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.LinkedList;
@@ -136,11 +138,16 @@ public class Commands {
     public static void show(ArrayList<String> commandTokens) {
         System.out.println("Command: " + tokensToCommandString(commandTokens));
         //System.out.println("Stub: This is the show method");
+        ArrayList<String> selectQuery = new ArrayList<>();
         if (commandTokens.get(1).toLowerCase() == "tables") {
-            //parsequery table_name column from catalog table
+            selectQuery.add("SELECT");
+            selectQuery.add("table_name"); //column-names column from
+            selectQuery.add("FROM");
+            selectQuery.add("maxwellbase_tables");
+            parseQuery(selectQuery);
         }
         else{
-            //Error statement
+            System.out.println("Command is incorrect.\nType \"help;\" to display supported commands.");
         }
         /* TODO: Your code goes here */
     }
@@ -149,18 +156,48 @@ public class Commands {
      *  Stub method for executing queries
      */
     public static void parseQuery(ArrayList<String> commandTokens) {
-
-        System.out.println("Command: " + tokensToCommandString(commandTokens));
-        ArrayList<String> columns = new ArrayList<>();
-        String tableName = new String();
-
-
         // Where to be handled later
         //System.out.println("Stub: This is the parseQuery method");
-        if(commandTokens.get(1) == "*"){
+        System.out.println("Command: " + tokensToCommandString(commandTokens));
+        boolean allColumns = false;
+        String columnName = new String();
+        String value = new String();
+        String operator = new String();
+        ArrayList<String> columns = new ArrayList<>();
+        String tableName = new String();
+        ArrayList<Record> result = new ArrayList<>();
+        int queryLength = commandTokens.size();
+        if(queryLength == 1) {
+            System.out.println("Query is incorrect.\nType \"help;\" to display supported commands.");
+            return;
+        }
+        int i = 1;
+        if(commandTokens.get(i) == "*")
+            allColumns = true;
+        else {
+            while(!(commandTokens.get(i).equals("FROM")) && i < queryLength ){
+                columns.add(commandTokens.get(i));
+                i++;
+            }
+            if(i == queryLength) {
+                System.out.println("Query is incorrect.\nType \"help;\" to display supported commands.");
+                return;
+            }
+        }
+
+
+
+        Table table  = new Table(tableName);
+
+
             tableName=commandTokens.get(3);
-            //select column_names from catalog column table where table name = table name;
-            //all columns
+            try {
+                result = table.search(null,null,null);
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+
+        if(commandTokens.get(1) == "*"){
         }
         else
         {
