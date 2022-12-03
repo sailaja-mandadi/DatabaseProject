@@ -51,8 +51,19 @@ public class IndexFile extends DatabaseFile{
         int middleRecord = getNumberOfCells(pageNumber) / 2;
         this.seek((long) pageNumber * pageSize + 0x10 + middleRecord * 2);
         int middleRecordOffset = this.readShort();
+        this.MoveCells(pageNumber, parentPage, middleRecord, 1);
+        this.MoveCells(pageNumber, newPage, middleRecord + 1, getNumberOfCells(pageNumber) - middleRecord);
+
+        this.seek((long) pageNumber * pageSize + middleRecordOffset + 2);
+        Object middleValue = this.readValue(valueSize, dataType);
+
+        return newPage;
+    }
+
+    public void MoveCells(int sourcePage, int destinationPage, int startCell, int numCells){
 
     }
+
 
     /**
      * Initializes the index file with all the records in the table
