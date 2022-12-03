@@ -139,7 +139,7 @@ public class Commands {
         System.out.println("Command: " + tokensToCommandString(commandTokens));
         //System.out.println("Stub: This is the show method");
         ArrayList<String> selectQuery = new ArrayList<>();
-        if (commandTokens.get(1).toLowerCase() == "tables") {
+        if (commandTokens.get(1).toLowerCase().equals("tables")) {
             selectQuery.add("SELECT");
             selectQuery.add("table_name"); //column-names column from
             selectQuery.add("FROM");
@@ -172,12 +172,12 @@ public class Commands {
             return;
         }
         int i = 1;
-        if(commandTokens.get(i) == "*") {
+        if(commandTokens.get(i).equals("*")) {
             allColumns = true;
             i++;
         }
         else {
-            while ( i < queryLength && !(commandTokens.get(i).toLowerCase().equals("FROM")) ) {
+            while ( i < queryLength && !(commandTokens.get(i).toLowerCase().equals("from")) ) {
                 if(!(commandTokens.get(i).toLowerCase().equals(",")))columns.add(commandTokens.get(i));
                 i++;
             }
@@ -191,28 +191,30 @@ public class Commands {
             System.out.println("Query is incorrect.\nType \"help;\" to display supported commands.");
             return;
         }
+
         tableName = commandTokens.get(i);
         Table table  = new Table(tableName);
+        //   System.out.println("test1:"+ tableName+" "+ allColumns+" "+columns);
         i++;
         if(queryLength == i) {
             try {
                 //System.out.println("")
                 result = table.search(null, null, null);
+                // System.out.println("test2:"+ tableName+" "+ allColumns+" "+columns);
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }
         }
-        else if(commandTokens.get(i).toLowerCase().equals("WHERE")){
+
+        else if(commandTokens.get(i).toLowerCase().equals("where")){
+            System.out.println("i,test:"+ i );
             i++;
-            if (i+3 != queryLength || i+4 != queryLength) {
-                System.out.println("Query is incorrect.\nType \"help;\" to display supported commands.");
-                return;
-            }
-            else{
-                if(commandTokens.get(i).toLowerCase().equals("NOT")) {
+            if (i+3 == queryLength || i+4 == queryLength) {
+                if(commandTokens.get(i).toLowerCase().equals("not")) {
                     columnName = commandTokens.get(i + 1);
                     value = commandTokens.get(i + 3);
                     operator = commandTokens.get(i + 2);
+                    // System.out.println("test3:"+ columnName+" "+value+" "+operator);
                     switch (operator) {
                         case "=" -> {
                             try {
@@ -266,14 +268,19 @@ public class Commands {
                     operator =  commandTokens.get(i+1);
                     value =  commandTokens.get(i+2);
                     try {
+                        // System.out.println("test:"+ columnName+" "+value+" "+operator);
                         result = table.search(columnName,value,operator);
+
                     } catch (IOException e) {
                         throw new RuntimeException(e);
                     }
                 }
-
             }
-
+            else{
+                System.out.println("Query is incorrect.\nType \"help;\" to display supported commands.");
+                return;
+            }
+            result.size();
 
 
 
