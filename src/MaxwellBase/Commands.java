@@ -6,8 +6,9 @@ import static java.lang.System.out;
 
 import java.io.IOException;
 import java.io.RandomAccessFile;
-import java.lang.reflect.Array;
+import java.sql.Array;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.Locale;
@@ -214,6 +215,10 @@ public class Commands {
                     columnName = commandTokens.get(i + 1);
                     value = commandTokens.get(i + 3);
                     operator = commandTokens.get(i + 2);
+                    if(table.getColumnType(columnName).toString().equals("DATE"))
+                        value = DataFunctions.toDate(value);
+
+
                     // System.out.println("test3:"+ columnName+" "+value+" "+operator);
                     switch (operator) {
                         case "=" -> {
@@ -280,12 +285,9 @@ public class Commands {
                 System.out.println("Query is incorrect.\nType \"help;\" to display supported commands.");
                 return;
             }
-            result.size();
 
-
-
+            Commands.display(table,result,columns,allColumns);
         }
-
     }
 
     /*
@@ -373,6 +375,66 @@ public class Commands {
         out.println("EXIT;");
         out.println("\tExit the program.\n");
         out.println(Utils.printSeparator("*",80));
+    }
+
+
+    /**
+     * function to display records returned in a search query as a Table in command line
+     * @param table - name of table
+     * @param data - list of records that are result of a search query
+     * @param selColumns - columns to be displayed as per select query
+     * @param allColumns - boolean to know if there is a "*" wildcard in select query
+     */
+    public static void display(Table table, ArrayList<Record> data, ArrayList<String> selColumns, boolean allColumns){
+        ArrayList<Integer> columnNum = new ArrayList<>();
+        ArrayList<Integer> colSize = new ArrayList<>();
+        if (allColumns){
+            for(int i = 0; i < table.columnNames.size();i++ )
+                    columnNum.add(i);
+        }
+        else{
+            for(String column : selColumns){
+                for(int i = 0; i < table.columnNames.size();i++ )
+                    if(table.columnNames.get(i).equals(column))
+                        columnNum.add(i);
+            }
+        }
+
+        Collections.sort(columnNum);
+
+        for(Integer i : columnNum){
+            int maxLength = table.columnNames.get(i).length();
+            for(int iter = 0; iter < data.size();i++){
+                int len = data.get(i).getValues().get(i).toString().trim().length();
+                maxLength = len > maxLength ? len : maxLength;
+            }
+            colSize.add(maxLength);
+        }
+        int totalLength = (columnNum.size()-1)*3 + 4 ;
+        for(Integer i : colSize)
+            totalLength +=colSize.get(i);
+
+        //print a line
+        System.out.println(Utils.printSeparator("-",totalLength));
+        //print column names
+        String temp = "| ";
+        for(Integer i : columnNum){
+            temp +=" "+ String.format("%-"+colSize.get(i)+"s",table.columnNames.get(i)) + " |";
+        }
+        System.out.println(temp);
+        //print a line
+        System.out.println(Utils.printSeparator("-",totalLength));
+        // print data
+        for(int rec =0; rec<data.size();rec++){
+            temp = "| ";
+            for(Integer col : columnNum){
+                temp +=" "+ String.format("%-"+colSize.get(col)+"s",data.get(rec).getValues().get(col).toString().trim()) + " |";
+            }
+            System.out.println(temp);
+        }
+        //print a line
+        System.out.println(Utils.printSeparator("-",totalLength));
+
     }
 
 }

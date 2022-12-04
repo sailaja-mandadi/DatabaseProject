@@ -1,7 +1,7 @@
 package MaxwellBase;
 
 import java.util.ArrayList;
-import java.util.Objects;
+
 import Constants.Constants;
 public class Record {
     private short recordSize;
@@ -88,6 +88,6 @@ public class Record {
             return false;
         }
         Object columnValue = values.get(columnIndex);
-        return DataFuntions.compare(columnType, columnValue, value, operator);
+        return DataFunctions.compare(columnType, columnValue, value, operator);
     }
 }

@@ -49,7 +49,7 @@ public class Table {
         }
     }
 
-    public Constants.Constants.DataTypes getColumnType(String columnName) {
+    public Constants.DataTypes getColumnType(String columnName) {
         return columnTypes.get(columnNames.indexOf(columnName));
     }
 
