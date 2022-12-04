@@ -66,4 +66,24 @@ public class DataFunctions {
     }
 
 
+    /**
+     * YEAR to required format of year ( base year - 2000)
+     * @param date format - YYYY-MM-DD_hh:mm:ss
+     * @return year in INT format with 2000 as base year
+     */
+    public static int toYear(String date){
+
+        return 0;
+    }
+
+    /**
+     * time as milliseconds from mid night
+     * @param time
+     * @return
+     */
+    public static int toTime(String time){
+        return 0;
+    }
+
+
 }

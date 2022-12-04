@@ -11,13 +11,19 @@ public class Table {
     ArrayList<Constants.DataTypes> columnTypes;
     String tableName;
     TableFile tableFile;
-
-    public Table(String tableName, ArrayList<String> columnNames, ArrayList<Constants.DataTypes> columnTypes) throws IOException {
+    public Table(String tableName) throws IOException {
+        this.tableName = tableName;
+        this.tableFile = new TableFile(tableName + ".tbl",Settings.getUserDataDirectory());
+    }
+    public Table(String tableName, ArrayList<String> columnNames, ArrayList<Constants.DataTypes> columnTypes, boolean userDataTable) throws IOException {
         this.tableName = tableName;
         this.columnNames = columnNames;
         this.columnTypes = columnTypes;
         try {
-            this.tableFile = new TableFile(tableName + ".tbl");
+            if(userDataTable)
+                this.tableFile = new TableFile(tableName + ".tbl",Settings.getUserDataDirectory());
+            else
+                this.tableFile = new TableFile(tableName + ".tbl",Settings.getCatalogDirectory());
         } catch (IOException e) {
             throw new RuntimeException(e);
         }

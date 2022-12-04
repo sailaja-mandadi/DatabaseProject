@@ -8,14 +8,15 @@ import java.io.RandomAccessFile;
 public abstract class DatabaseFile extends RandomAccessFile {
     public final int pageSize;
     public int lastPageIndex = -1;
-    public DatabaseFile(String name, Constants.PageType pageType) throws IOException{
-        super(name, "rw");
+    public DatabaseFile(String name, Constants.PageType pageType, String path) throws IOException{
+        super(path+"/"+name, "rw");
         this.pageSize = Constants.PAGE_SIZE;
         // If the file is empty, write the first page
         if (this.length() == 0) {
             this.createPage(0xFFFFFFFF, pageType);
         }
     }
+
     public int createPage(int parentPage, Constants.PageType pageType) throws IOException {
         lastPageIndex++;
         this.setLength((long) (lastPageIndex + 1) * pageSize);

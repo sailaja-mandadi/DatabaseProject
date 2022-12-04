@@ -17,7 +17,7 @@ public class IndexFile extends DatabaseFile{
      * @throws IOException
      */
     public IndexFile(Table table, String columnName) throws IOException {
-        super(table.tableName + "." + columnName + ".ndx", Constants.PageType.INDEX_LEAF);
+        super(table.tableName + "." + columnName + ".ndx", Constants.PageType.INDEX_LEAF,Settings.getUserDataDirectory());
         this.dataType = table.getColumnType(columnName);
         switch (dataType) {
             case TINYINT, YEAR -> this.valueSize = 1;
@@ -28,6 +28,8 @@ public class IndexFile extends DatabaseFile{
             case NULL -> this.valueSize = 0;
         }
     }
+
+
 
     public Object readValue(int page, int offset) throws IOException{
         this.seek((long) page * Constants.PAGE_SIZE);

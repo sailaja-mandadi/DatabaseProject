@@ -221,7 +221,7 @@ public class Commands {
                     value = commandTokens.get(i + 3);
                     operator = commandTokens.get(i + 2);
                     if(table.getColumnType(columnName).toString().equals("DATE"))
-                        value = DataFunctions.toDate(value);
+                       // value = DataFunctions.toDate(value);
 
 
                     // System.out.println("test3:"+ columnName+" "+value+" "+operator);

@@ -8,8 +8,8 @@ import java.util.Random;
 
 public class TableFile extends DatabaseFile{
 
-    public TableFile(String tableName) throws IOException {
-        super(tableName + ".tbl", Constants.PageType.TABLE_LEAF);
+    public TableFile(String tableName,String path) throws IOException {
+        super(tableName + ".tbl", Constants.PageType.TABLE_LEAF,path);
     }
 
 
