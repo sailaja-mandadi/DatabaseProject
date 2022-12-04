@@ -43,11 +43,8 @@ public class TableFile extends DatabaseFile{
                 tableFile.appendRecord(record);
             }
             int numRecords = tableFile.getNumberOfCells(0);
-            int page = 0;
             for (int i = 0; i < numRecords; i++) {
-                tableFile.seek(i * 2 + 0x10);
-                int offset = tableFile.readShort();
-                Record record = tableFile.readRecord(page, offset);
+                Record record = tableFile.getRecord(i);
                 System.out.println(record);
             }
         }
@@ -80,30 +77,6 @@ public class TableFile extends DatabaseFile{
 
 
     /**
-     * Find the rowId of the last record on a page
-     * @param page the page to search
-     * @return the rowId of the last record on the page
-     */
-    public int getMaxRowId(int page) throws IOException {
-        if (getNumberOfCells(page) <= 0){
-            throw new IOException("Page is empty");
-        }
-        this.seek((long) page * pageSize);
-        Constants.PageType pageType = Constants.PageType.fromValue(this.readByte());
-        int numCells = getNumberOfCells(page);
-        this.seek((long) page * pageSize + 0x10 + (numCells - 1) * 2);
-        int lastCellOffset = this.readShort();
-        this.seek((long) page * pageSize + lastCellOffset);
-        if (pageType == Constants.PageType.TABLE_LEAF) {
-            this.skipBytes(2);
-        } else if (pageType == Constants.PageType.TABLE_INTERIOR) {
-            this.skipBytes(4);
-        }
-        return this.readInt();
-    }
-
-
-    /**
      * Split a page into two pages
      * No records are moved, this is a b+1 tree
      * If root page is split, a new root page is created
@@ -119,7 +92,7 @@ public class TableFile extends DatabaseFile{
             parentPage = createPage(0xFFFFFFFF, Constants.PageType.TABLE_INTERIOR);
             this.seek((long) pageNumber * pageSize + 0x0A);
             this.writeInt(parentPage);
-            writePagePointer(parentPage, pageNumber, pageNumber);
+            writePagePointer(parentPage, pageNumber, getMinRowId(pageNumber));
         }
         int newPage = createPage(parentPage, pageType);
         writePagePointer(parentPage, newPage, splittingRowId);
@@ -202,11 +175,13 @@ public class TableFile extends DatabaseFile{
         return nextPage;
     }
 
-    public int getNextRowId() throws IOException {
-        int lastPage = getLastLeafPage();
-        return getMaxRowId(lastPage);
-    }
 
+    public Record getRecord(int rowId) throws IOException {
+        int[] pageAndOffset = findRecord(rowId);
+        int page = pageAndOffset[0];
+        int offset = pageAndOffset[1];
+        return readRecord(page, offset);
+    }
 
     public int[] findRecord(int rowId) throws IOException{
         int currentPage = getRootPage();
@@ -221,14 +196,13 @@ public class TableFile extends DatabaseFile{
             while (low < high /*currentRowId != rowId*/) {
                 // binary search over cells
                 // 0x10 location of cells in the page where each cell location = 2 byte
-                this.seek((long) currentPage * pageSize + 0x10 + 2 * currentCell);
-                int offset = this.readShort(); //page offset: location of row as # of bytes from beg. of page
+                int offset = getCellOffset(currentPage, currentCell); //page offset: location of row as # of bytes from beg. of page
                 this.seek((long) currentPage * pageSize + offset);
 
                 if (pageType == Constants.PageType.TABLE_INTERIOR) {
                     this.skipBytes(4); // skip page pointer
                     currentRowId = this.readInt();
-                    if (currentRowId < rowId){
+                    if (currentRowId < rowId) {
                         low = currentCell; // may be inside the current cell so leave it
                     }
                     else if ( currentRowId > rowId)
@@ -258,8 +232,7 @@ public class TableFile extends DatabaseFile{
                     return null;
                 }
             } else if (pageType == Constants.PageType.TABLE_INTERIOR) {
-                this.seek((long) currentPage * pageSize + 0x10 + 2L * currentCell);
-                int offset = this.readShort();
+                int offset = getCellOffset(currentPage, currentCell);
                 this.seek((long) currentPage * pageSize + offset);
                 currentPage = this.readInt();
             }
@@ -339,7 +312,7 @@ public class TableFile extends DatabaseFile{
             // Iterate over all records in the current page
             for (int i = 0; i < numberOfCells; i++) {
                 this.seek((long) currentPage * pageSize + 0x10 + 2 * i);
-                int currentOffset = this.readInt();
+                int currentOffset = getCellOffset(currentPage, i);
                 Record record = readRecord(currentPage, currentOffset);
                 if (record.compare(columnIndex, value, operator)) {
                     records.add(record);

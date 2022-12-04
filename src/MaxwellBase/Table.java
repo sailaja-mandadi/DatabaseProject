@@ -53,5 +53,12 @@ public class Table {
         return columnTypes.get(columnNames.indexOf(columnName));
     }
 
+    public void insert(Record record) {
+
+    }
+
+    public void remove(Record record) {
+
+    }
 
 }

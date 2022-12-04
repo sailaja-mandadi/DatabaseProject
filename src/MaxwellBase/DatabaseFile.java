@@ -79,4 +79,9 @@ public abstract class DatabaseFile extends RandomAccessFile {
         return getContentStart(page) - cellSize < headerSize;
     }
 
+    public short getCellOffset(int page, int cellNumber) throws IOException {
+        this.seek((long) page * pageSize + 0x10 + (2L * cellNumber));
+        return this.readShort();
+    }
+
 }
