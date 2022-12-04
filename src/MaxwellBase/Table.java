@@ -12,8 +12,10 @@ public class Table {
     String tableName;
     TableFile tableFile;
 
-    public Table(String tableName) {
+    public Table(String tableName, ArrayList<String> columnNames, ArrayList<Constants.DataTypes> columnTypes) throws IOException {
         this.tableName = tableName;
+        this.columnNames = columnNames;
+        this.columnTypes = columnTypes;
         try {
             this.tableFile = new TableFile(tableName + ".tbl");
         } catch (IOException e) {
@@ -53,11 +55,14 @@ public class Table {
         return columnTypes.get(columnNames.indexOf(columnName));
     }
 
-    public void insert(Record record) {
+    // Handle rowId generation in here
+    public void insert(ArrayList<Object> value) {
+        //
 
     }
 
-    public void remove(Record record) {
+    // TODO: Implement this
+    public void remove() {
 
     }
 

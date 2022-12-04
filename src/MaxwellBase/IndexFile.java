@@ -312,11 +312,15 @@ public class IndexFile extends DatabaseFile{
      * @param rowId The row id of the record to add
      */
     public void addItemToCell(Object value, int rowId) throws IOException {
+        // Find the cell to add the record to
         int[] pageAndIndex = findValue(value);
         int page = pageAndIndex[0];
         int index = pageAndIndex[1];
-        if (index == -1) {
+        int exists = pageAndIndex[2];
+        // If the cell doesn't exist, create it and exit
+        if (exists == 0) {
             writeCell(value, new ArrayList<>(Collections.singletonList(rowId)), page, -1);
+            return;
         }
         if (shouldSplit(page, 4)) {
             page = splitPage(page, value);
@@ -325,29 +329,45 @@ public class IndexFile extends DatabaseFile{
         this.seek((long) page * pageSize);
         Constants.PageType pageType = Constants.PageType.fromValue(this.readByte());
 
+        // Make space for the new row id
         int newOffset = this.shiftCells(page, index - 1, 4);
-        this.seek((long) page * pageSize + newOffset + 3L);
+
+        this.seek((long) page * pageSize + newOffset + 2L);
         if (pageType == Constants.PageType.INDEX_INTERIOR) {
             this.skipBytes(4);
         }
-        // I am working here --------------------------------------------------------
         ArrayList<Integer> rowIds = new ArrayList<>();
         int numRowIds = this.readByte();
-
-        for (int i = 0; i < numRowIds; i++) {
-            rowIds.add(this.readInt());
+        int dataType = this.readByte();
+        if (dataType >= 0x0C) {
+            this.skipBytes(dataType - 0x0C);
+        } else {
+            this.skipBytes(valueSize);
         }
-
-
-
-
-
+        long rowIdOffset = this.getFilePointer();
+        for (int i = 0; i < numRowIds; i++) {
+            int ri = this.readInt();
+            if (rowId < ri && (i == 0 || rowId > rowIds.get(i - 1))) {
+                rowIds.add(rowId);
+            }
+            rowIds.add(ri);
+        }
+        if (rowId > rowIds.get(rowIds.size() - 1)) {
+            rowIds.add(rowId);
+        }
+        this.seek(rowIdOffset);
+        for (int ri : rowIds) {
+            this.writeInt(ri);
+        }
     }
 
     /**
      * Finds the page and index of the cell containing value
      * @param value The value to search for
-     * @return The page and index of the cell containing value. If the value is not found, the index is -1
+     * @return The page and index of the cell containing value and flag denoting if the cell exists
+     * If the cell exists, the last element is 1
+     * If the cell doesn't exist, the page and index mark the cell that should be before it
+     * and the last element is 0
      */
     public int[] findValue(Object value) throws IOException {
         int currentPage = getRootPage();
@@ -359,9 +379,9 @@ public class IndexFile extends DatabaseFile{
             int offset = getCellOffset(currentPage, index);
             Object cellValue = readValue(currentPage, offset);
             if (DataFunctions.compareTo(dataType, value, cellValue) == 0) {
-                return new int[] {currentPage, index};
+                return new int[] {currentPage, index, 1};
             } else if (pageType == Constants.PageType.INDEX_LEAF) {
-                return new int[] {currentPage, -1};
+                return new int[] {currentPage, index, 0};
             } else {
                 this.seek((long) currentPage * pageSize + offset);
                 currentPage = this.readInt();

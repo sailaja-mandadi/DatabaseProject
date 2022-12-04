@@ -38,8 +38,8 @@ public class MaxwellBase {
             System.out.println("The data directory doesn't exit. Initializing...");
             testInitializing.initialize(dataDirectory);
         }
-        else{
-            testInitializing.initializeUserCatalogDirectory();
+        else {
+            testInitializing.initializeCatalogDirectory();
         }
 
         /* Display the welcome screen */

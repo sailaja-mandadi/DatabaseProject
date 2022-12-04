@@ -194,7 +194,12 @@ public class Commands {
         }
 
         tableName = commandTokens.get(i);
-        Table table  = new Table(tableName);
+        Table table  = null;
+//        try {
+//            table = new Table(tableName);
+//        } catch (IOException e) {
+//            throw new RuntimeException(e);
+//        }
         //   System.out.println("test1:"+ tableName+" "+ allColumns+" "+columns);
         i++;
         if(queryLength == i) {

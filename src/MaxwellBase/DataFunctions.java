@@ -4,6 +4,12 @@ import Constants.Constants;
 
 public class DataFunctions {
 
+    /**
+     * Takes a string and data type and returns the string parsed to the data type
+     * @param dataType The data type to parse the string to
+     * @param s The string to parse
+     * @return
+     */
     public static Object parseString(Constants.DataTypes dataType, String s) {
         return switch (dataType) {
             case TINYINT, YEAR -> Byte.parseByte(s);

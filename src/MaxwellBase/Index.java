@@ -6,7 +6,7 @@ public class Index {
 
     }
 
-    public Record search(Object value) {
+    public Record search(Object value, String operator) {
         return null;
     }
 

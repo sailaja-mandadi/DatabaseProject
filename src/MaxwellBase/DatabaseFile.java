@@ -8,7 +8,7 @@ import java.io.RandomAccessFile;
 public abstract class DatabaseFile extends RandomAccessFile {
     public final int pageSize;
     public int lastPageIndex = -1;
-    public DatabaseFile(String name, Constants.Constants.PageType pageType) throws IOException{
+    public DatabaseFile(String name, Constants.PageType pageType) throws IOException{
         super(name, "rw");
         this.pageSize = Constants.PAGE_SIZE;
         // If the file is empty, write the first page
@@ -84,4 +84,15 @@ public abstract class DatabaseFile extends RandomAccessFile {
         return this.readShort();
     }
 
+    public int[] getPageInfo(int page) throws IOException {
+        int[] pageInfo = new int[5];
+        this.seek((long) page * pageSize);
+        pageInfo[0] = this.readByte(); // Page type
+        this.readByte();
+        pageInfo[1] = this.readShort(); // Number of cells
+        pageInfo[2] = this.readShort(); // Start of content
+        pageInfo[3] = this.readInt(); // Rightmost child page if interior page, Right sibling page if leaf page
+        pageInfo[4] = this.readInt(); // Parent page
+        return pageInfo;
+    }
 }

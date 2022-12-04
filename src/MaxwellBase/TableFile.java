@@ -12,47 +12,6 @@ public class TableFile extends DatabaseFile{
         super(tableName + ".tbl", Constants.PageType.TABLE_LEAF);
     }
 
-    public static void main(String[] args) {
-        try (TableFile tableFile = new TableFile("test.tbl")) {
-            tableFile.seek(0);
-            System.out.println("Page type: " + tableFile.readByte());
-            tableFile.readByte();
-            System.out.println("Number of records: " + tableFile.readShort());
-            System.out.println("Start of content: " + tableFile.readShort());
-            System.out.println("Right page pointer: " + tableFile.readInt());
-            System.out.println("Parent page pointer: " + tableFile.readInt());
-            ArrayList<Constants.DataTypes> testcol = new ArrayList<>();
-            testcol.add(Constants.DataTypes.INT);
-            testcol.add(Constants.DataTypes.TEXT);
-            testcol.add(Constants.DataTypes.DOUBLE);
-            for (int i = 0; i < 10; i++) {
-                Random rand = new Random();
-                ArrayList<Object> testrow = new ArrayList<>();
-                System.out.println("Inserting row " + i);
-                int col1 = rand.nextInt(100);
-                System.out.println("\tcol1: " + col1);
-                String col2 = "testajajajajajajajajajajajajajajajajajajajajajajajajaj" + (char)(rand.nextInt(26) + 'a');
-                System.out.println("\tcol2: " + col2);
-                double col3 = rand.nextDouble();
-                System.out.println("\tcol3: " + col3);
-                testrow.add(col1);
-                testrow.add(col2);
-                testrow.add(col3);
-                Record record = new Record(testcol, testrow, i);
-                System.out.println("\tRecord size: " + record.getRecordSize());
-                tableFile.appendRecord(record);
-            }
-            int numRecords = tableFile.getNumberOfCells(0);
-            for (int i = 0; i < numRecords; i++) {
-                Record record = tableFile.getRecord(i);
-                System.out.println(record);
-            }
-        }
-        catch (IOException e) {
-            e.printStackTrace();
-        }
-
-    }
 
     /**
      * Find the rowid of the first record on a page
@@ -163,9 +122,11 @@ public class TableFile extends DatabaseFile{
 
     public int getLastLeafPage() throws IOException {
         int nextPage = getRootPage();
+        System.out.println("Root page: " + nextPage);
         while (true) {
             this.seek((long) pageSize * nextPage);
             Constants.PageType pageType = Constants.PageType.fromValue(this.readByte());
+            System.out.println("Page type: " + pageType);
             if (pageType == Constants.PageType.TABLE_LEAF) {
                 break;
             }
@@ -302,7 +263,7 @@ public class TableFile extends DatabaseFile{
             this.seek((long) currentPage * pageSize);
             pageType = Constants.PageType.fromValue(this.readByte());
             int contentStart = getContentStart(currentPage);
-            this.seek((long) currentPage * pageSize + contentStart + 4);
+            this.seek((long) currentPage * pageSize + contentStart);
             currentPage = this.readInt();
         }
         // Iterate over all records in the leaf pages

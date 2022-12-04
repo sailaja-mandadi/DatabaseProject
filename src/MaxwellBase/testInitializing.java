@@ -26,8 +26,8 @@ public class testInitializing {
     }
     public static void initializeDataDirectory(){
         try{
-            File catalogDirectory = new File(Settings.getCatalogDirectory());;
-            File UserDataDirectory = new File(Settings.getUserDataDirectory());;
+            File catalogDirectory = new File(Settings.getCatalogDirectory());
+            File UserDataDirectory = new File(Settings.getUserDataDirectory());
             if (!catalogDirectory.exists()){
                 catalogDirectory.mkdir();
             }
