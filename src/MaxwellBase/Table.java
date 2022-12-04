@@ -13,7 +13,7 @@ public class Table {
     TableFile tableFile;
     public Table(String tableName) throws IOException {
         this.tableName = tableName;
-        this.tableFile = new TableFile(tableName + ".tbl",Settings.getUserDataDirectory());
+        this.tableFile = new TableFile(tableName ,Settings.getUserDataDirectory());
     }
     public Table(String tableName, ArrayList<String> columnNames, ArrayList<Constants.DataTypes> columnTypes, boolean userDataTable) throws IOException {
         this.tableName = tableName;
@@ -21,9 +21,9 @@ public class Table {
         this.columnTypes = columnTypes;
         try {
             if(userDataTable)
-                this.tableFile = new TableFile(tableName + ".tbl",Settings.getUserDataDirectory());
+                this.tableFile = new TableFile(tableName ,Settings.getUserDataDirectory());
             else
-                this.tableFile = new TableFile(tableName + ".tbl",Settings.getCatalogDirectory());
+                this.tableFile = new TableFile(tableName ,Settings.getCatalogDirectory());
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
@@ -33,7 +33,7 @@ public class Table {
         // Check if index exists for columnName
         // If it does, use index to search
         // If it doesn't, use tableFile to search
-        File file = new File(tableName + "." + columnName + ".ndx");
+        File file = new File(tableName + "." + columnName );
         if (file.exists()) {
             try (IndexFile indexFile = new IndexFile(this, columnName)) {
                 ArrayList<Integer> rowIds = indexFile.search(value, operator);
