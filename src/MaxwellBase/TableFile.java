@@ -4,7 +4,6 @@ import Constants.Constants;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Random;
 
 public class TableFile extends DatabaseFile{
 
@@ -22,8 +21,7 @@ public class TableFile extends DatabaseFile{
         if (getNumberOfCells(page) <= 0){
             throw new IOException("Page is empty");
         }
-        this.seek((long) page * pageSize);
-        Constants.PageType pageType = Constants.PageType.fromValue(this.readByte());
+        Constants.PageType pageType = getPageType(page);
         this.seek((long) page * pageSize + 0x10);
         int offset = this.readShort();
         this.seek((long) page * pageSize + offset);
@@ -44,9 +42,7 @@ public class TableFile extends DatabaseFile{
      * @return the page number of the new page
      */
     public int splitPage(int pageNumber, int splittingRowId) throws IOException {
-        this.seek((long) pageNumber * pageSize);
-        byte pageTypeByte = this.readByte();
-        Constants.PageType pageType = Constants.PageType.fromValue(pageTypeByte);
+        Constants.PageType pageType = getPageType(pageNumber);
         int parentPage = getParentPage(pageNumber);
         if (parentPage == 0xFFFFFFFF) {
             parentPage = createPage(0xFFFFFFFF, Constants.PageType.TABLE_INTERIOR);
@@ -124,8 +120,7 @@ public class TableFile extends DatabaseFile{
     public int getLastLeafPage() throws IOException {
         int nextPage = getRootPage();
         while (true) {
-            this.seek((long) pageSize * nextPage);
-            Constants.PageType pageType = Constants.PageType.fromValue(this.readByte());
+            Constants.PageType pageType = getPageType(nextPage);
             if (pageType == Constants.PageType.TABLE_LEAF) {
                 break;
             }
@@ -151,8 +146,7 @@ public class TableFile extends DatabaseFile{
     public int[] findRecord(int rowId) throws IOException{
         int currentPage = getRootPage();
         while (true) {
-            this.seek((long) currentPage * pageSize);
-            Constants.PageType pageType = Constants.PageType.fromValue(this.readByte());
+            Constants.PageType pageType = getPageType(currentPage);
             int numCells = getNumberOfCells(currentPage);
             int currentCell = numCells / 2; // mid
             int low = 0; // L
@@ -187,8 +181,7 @@ public class TableFile extends DatabaseFile{
     }
 
     private int getRowId(int page, int index) throws IOException {
-        this.seek((long) page * pageSize);
-        Constants.PageType pageType = Constants.PageType.fromValue(this.readByte());
+        Constants.PageType pageType = getPageType(page);
         int offset = getCellOffset(page, index); //page offset: location of row as # of bytes from beg. of page
         this.seek((long) page * pageSize + offset);
         if (pageType == Constants.PageType.TABLE_INTERIOR) {
@@ -255,15 +248,13 @@ public class TableFile extends DatabaseFile{
         ArrayList<Record> records = new ArrayList<>();
 
         int currentPage = getRootPage();
-        this.seek((long) currentPage * pageSize);
-        Constants.PageType pageType = Constants.PageType.fromValue(this.readByte());
+        Constants.PageType pageType = getPageType(currentPage);
         // Go to first leaf page
         while (pageType != Constants.PageType.TABLE_LEAF) {
             int offset = getCellOffset(currentPage, 0);
             this.seek((long) currentPage * pageSize + offset);
             currentPage = this.readInt();
-            this.seek((long) currentPage * pageSize);
-            pageType = Constants.PageType.fromValue(this.readByte());
+            pageType = getPageType(currentPage);
         }
         // Iterate over all records in the leaf pages
         while (currentPage != 0xFFFFFFFF) {

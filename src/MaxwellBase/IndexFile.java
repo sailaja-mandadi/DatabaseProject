@@ -37,8 +37,7 @@ public class IndexFile extends DatabaseFile{
 
 
     public Object readValue(int page, int offset) throws IOException{
-        this.seek((long) page * Constants.PAGE_SIZE);
-        Constants.PageType pageType = Constants.PageType.fromValue(this.readByte());
+        Constants.PageType pageType = getPageType(page);
         this.seek((long) page * pageSize + offset);
         if (pageType == Constants.PageType.INDEX_INTERIOR) {
             this.skipBytes(4);
@@ -76,9 +75,7 @@ public class IndexFile extends DatabaseFile{
      * @return The new page that was created
      */
     public int splitPage(int pageNumber, Object splittingValue) throws IOException {
-        this.seek((long) pageNumber * pageSize);
-        byte pageTypeByte = this.readByte();
-        Constants.PageType pageType = Constants.PageType.fromValue(pageTypeByte);
+        Constants.PageType pageType = getPageType(pageNumber);
 
         int parentPage = getParentPage(pageNumber);
         if (parentPage == 0xFFFFFFFF) {
@@ -153,11 +150,12 @@ public class IndexFile extends DatabaseFile{
      * @param shift The number of bytes to shift the cells
      * @return The page offset of the free space created
      */
-    public int shiftCells(int page, int precedingCell, int shift) throws IOException {
+    public int shiftCells(int page, int precedingCell, int shift, boolean newRecord) throws IOException {
         if (shouldSplit(page, shift)) {
             throw new IOException("Asked to shift cells more than the page can hold");
         }
 
+        int oldContentStart = getContentStart(page);
         int contentOffset = setContentStart(page, (short) shift);
         if (contentOffset == pageSize) {
             return pageSize - shift;
@@ -168,18 +166,30 @@ public class IndexFile extends DatabaseFile{
         } else {
             startOffset = pageSize;
         }
-        this.seek((long) page * pageSize + contentOffset);
-        byte[] shiftedBytes = new byte[startOffset - contentOffset];
+        this.seek((long) page * pageSize + oldContentStart);
+        int bytesToMove = startOffset - oldContentStart;
+        if (shift < 0) {
+            bytesToMove += shift;
+        }
+        byte[] shiftedBytes = new byte[bytesToMove];
         this.read(shiftedBytes);
 
-        this.seek((long) page * pageSize + contentOffset - shift);
+        this.seek((long) page * pageSize + contentOffset);
         this.write(shiftedBytes);
 
         int numberOfCells = getNumberOfCells(page);
+        // Update the offsets of the cells that were shifted
         this.seek((long) page * pageSize + 0x10 + (precedingCell + 1) * 2L);
         byte[] oldOffsets = new byte[(numberOfCells - precedingCell - 1) * 2];
         this.read(oldOffsets);
-        this.seek((long) page * pageSize + 0x10 + (precedingCell + 2) * 2L);
+
+        // Shift the offsets by shift bytes
+        this.seek((long) page * pageSize + 0x10 + (precedingCell + 1) * 2L);
+
+        // If we are adding a new record, leave room for it's offset
+        if (newRecord) {
+            this.skipBytes(2);
+        }
         for (int i = 0; i < oldOffsets.length; i += 2) {
             short oldOffset = (short) ((oldOffsets[i] << 8) | (oldOffsets[i + 1] & 0xFF));
             this.writeShort(oldOffset - shift);
@@ -316,8 +326,7 @@ public class IndexFile extends DatabaseFile{
      * @param page The page to write to
      */
     public void writeCell(Object value, ArrayList<Integer> rowIds, int page, int childPage) throws IOException {
-        this.seek((long) page * pageSize);
-        Constants.PageType pageType = Constants.PageType.fromValue(this.readByte());
+        Constants.PageType pageType = getPageType(page);
 
         // get cell size
         short payloadSize = (short) (2 + valueSize + 4 * rowIds.size());
@@ -337,7 +346,7 @@ public class IndexFile extends DatabaseFile{
         if (insertionPoint == getNumberOfCells(page) - 1) {
             offset = setContentStart(page, cellSize);
         } else {
-            offset = shiftCells(page, insertionPoint, cellSize);
+            offset = shiftCells(page, insertionPoint, cellSize, true);
         }
         incrementNumberOfCells(page);
 
@@ -386,17 +395,7 @@ public class IndexFile extends DatabaseFile{
      */
     public void update(int rowId, Object oldValue, Object newValue) throws IOException {
         removeItemFromCell(oldValue, rowId);
-
-        int[] newPageAndIndex = this.findValue(newValue);
-        int newPage = newPageAndIndex[0];
-        int newIndex = newPageAndIndex[1];
-        int exists = newPageAndIndex[2];
-        if (exists == 0) {
-            writeCell(newValue, new ArrayList<>(Collections.singletonList(rowId)), newPage, -1);
-            return;
-        }
-        // TODO: add rowId to existing cell
-        // use shiftCells to make space for the new rowId
+        addItemToCell(newValue, rowId);
     }
 
     /**
@@ -412,22 +411,61 @@ public class IndexFile extends DatabaseFile{
         if (exists == 0) {
             throw new IllegalArgumentException("Record does not exist");
         }
-        ArrayList<Integer> rowIds = this.readRowIds(page, index);
+        removeItemFromCell(page, index, rowId);
+    }
+
+    /**
+     * Remove a record from a cell
+     * @param page The page of the cell to remove the record from
+     * @param index The index of the cell to remove the record from
+     * @param rowId The row id of the record to remove
+     */
+    public void removeItemFromCell(int page, int index, int rowId) throws IOException {
+        int offset = getCellOffset(page, index);
+        ArrayList<Integer> rowIds = this.readRowIds(page, offset);
         // Verify that the row id exists in the cell
         if (!rowIds.contains(rowId)) {
             throw new IllegalArgumentException("Row id not present in cell");
         }
-        int offset = getCellOffset(page, index);
         this.seek((long) page * pageSize + offset);
         // TODO: This
         rowIds.remove((Integer) rowId);
         // Remove the row id from the cell
         // use shiftCells remove space
+        // Remove the row id from the cell if it is not empty
+        Constants.PageType pageType = getPageType(page);
+        this.seek((long) page * pageSize + offset);
+        if (pageType == Constants.PageType.INDEX_INTERIOR) {
+            this.skipBytes(4);
+        }
+        int payloadSize = this.readShort();
+        this.writeByte(rowIds.size());
+        this.skipBytes(payloadSize - 4 * (rowIds.size() + 1) - 1);
+        for (int i : rowIds) {
+            this.writeInt(i);
+        }
+        this.shiftCells(page, index - 1, -4, false);
+
         if (rowIds.size() == 0) {
             // Delete the cell if it is empty
-        } else {
-            // Remove the row id from the cell if it is not empty
+            this.deleteCell(page, index);
         }
+    }
+
+    /**
+     * Delete a cell from the index file
+     * Must have no row ids associated with it
+     * @param page The page the cell is on
+     * @param index The index of the cell
+     */
+    public void deleteCell(int page, int index) throws IOException {
+        int offset = getCellOffset(page, index);
+        ArrayList<Integer> rowIds = this.readRowIds(page, offset);
+
+        if (rowIds.size() != 0) {
+            throw new IllegalArgumentException("Cannot delete cell with row ids");
+        }
+        // TODO
     }
 
     /**
@@ -450,26 +488,39 @@ public class IndexFile extends DatabaseFile{
             page = splitPage(page, value);
             index = findValuePosition(value, page);
         }
-        this.seek((long) page * pageSize);
-        Constants.PageType pageType = Constants.PageType.fromValue(this.readByte());
+        Constants.PageType pageType = getPageType(page);
 
         // Make space for the new row id
-        int newOffset = this.shiftCells(page, index - 1, 4);
+        this.shiftCells(page, index - 1, 4, false);
 
-        ArrayList<Integer> rowIds = readRowIds(page, index);
+        int newOffset = getCellOffset(page, index);
+
+        ArrayList<Integer> rowIds = readRowIds(page, newOffset);
         rowIds.add(rowId);
         Collections.sort(rowIds);
 
-        this.seek((long) page * pageSize + newOffset + 3L);
+        this.seek((long) page * pageSize + newOffset);
         if (pageType == Constants.PageType.INDEX_INTERIOR) {
             this.skipBytes(4);
         }
+        // Update the payload size
+        int payloadSize = this.readShort();
+        this.seek((long) page * pageSize + newOffset);
+        if (pageType == Constants.PageType.INDEX_INTERIOR) {
+            this.skipBytes(4);
+        }
+        this.writeShort(payloadSize + 4);
+
+        // Update the number of row ids
+        this.writeByte(rowIds.size());
+
         int dataType = this.readByte();
         if (dataType >= 0x0C) {
             this.skipBytes(dataType - 0x0C);
         } else {
             this.skipBytes(valueSize);
         }
+        // Write the row ids
         for (int ri : rowIds) {
             this.writeInt(ri);
         }
@@ -486,8 +537,7 @@ public class IndexFile extends DatabaseFile{
     public int[] findValue(Object value) throws IOException {
         int currentPage = getRootPage();
         while (true) {
-            this.seek((long) currentPage * pageSize);
-            Constants.PageType pageType = Constants.PageType.fromValue(this.readByte());
+            Constants.PageType pageType = getPageType(currentPage);
             int index = findValuePosition(value, currentPage);
             int offset = getCellOffset(currentPage, index);
             Object cellValue = readValue(currentPage, offset);
@@ -504,8 +554,7 @@ public class IndexFile extends DatabaseFile{
     }
 
     public ArrayList<Integer> readRowIds(int page, int offset) throws IOException {
-        this.seek((long) page * pageSize);
-        Constants.PageType pageType = Constants.PageType.fromValue(this.readByte());
+        Constants.PageType pageType = getPageType(page);
         this.seek((long) page * pageSize + offset);
         if (pageType == Constants.PageType.INDEX_INTERIOR) {
             this.skipBytes(4);
@@ -533,8 +582,7 @@ public class IndexFile extends DatabaseFile{
             return new ArrayList<>();
         }
         ArrayList<Integer> rowIds = new ArrayList<>();
-        this.seek((long) page * pageSize);
-        Constants.PageType pageType = Constants.PageType.fromValue(this.readByte());
+        Constants.PageType pageType = getPageType(page);
         int currentCell = start;
         int offset = getCellOffset(page, currentCell);
         while (currentCell <= end) {

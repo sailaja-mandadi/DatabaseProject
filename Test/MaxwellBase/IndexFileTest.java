@@ -14,7 +14,7 @@ public class IndexFileTest {
     TableFile tableFile;
 
     @Before
-    public void setUp() throws Exception {
+    public void setUp() {
         TableFileTest tableFileTest = new TableFileTest();
         tableFileTest.setUp();
         tableFileTest.appendRecord();
@@ -40,26 +40,6 @@ public class IndexFileTest {
     }
 
     @Test
-    public void readValue() {
-    }
-
-    @Test
-    public void splitPage() {
-    }
-
-    @Test
-    public void shiftCells() {
-    }
-
-    @Test
-    public void findValuePosition() {
-    }
-
-    @Test
-    public void moveCells() {
-    }
-
-    @Test
     public void initializeIndex() {
         try {
             indexFile.initializeIndex();
@@ -67,10 +47,6 @@ public class IndexFileTest {
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
-    }
-
-    @Test
-    public void writeCell() {
     }
 
     @Test
@@ -90,14 +66,54 @@ public class IndexFileTest {
 
     @Test
     public void removeItemFromCell() {
+        try {
+            initializeIndex();
+            indexFile.removeItemFromCell("Terminology St 176, Summerholm, Guadeloupe, 673843", 9);
+            ArrayList<Integer> searched = indexFile.search("Terminology St 176, Summerholm, Guadeloupe, 673843", "=");
+            assertEquals(0, searched.size());
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+        setUp();
+        initializeIndex();
+        try {
+            indexFile.addItemToCell("Terminology St 176, Summerholm, Guadeloupe, 673843", 10);
+            indexFile.removeItemFromCell("Terminology St 176, Summerholm, Guadeloupe, 673843", 9);
+            ArrayList<Integer> searched = indexFile.search("Terminology St 176, Summerholm, Guadeloupe, 673843", "=");
+            assertEquals(1, searched.size());
+            assertEquals(10, searched.get(0));
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
     }
 
     @Test
     public void addItemToCell() {
+        initializeIndex();
+        try {
+            indexFile.addItemToCell("Terminology St 176, Summerholm, Guadeloupe, 673843", 10);
+            ArrayList<Integer> searched = indexFile.search("Terminology St 176, Summerholm, Guadeloupe, 673843", "=");
+            assertEquals(2, searched.size());
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
     }
 
     @Test
     public void findValue() {
+        initializeIndex();
+        try {
+            int[] pageAndIndex = indexFile.findValue("Terminology St 176, Summerholm, Guadeloupe, 673843");
+            assertEquals(2, pageAndIndex[0]);
+            assertEquals(3, pageAndIndex[1]);
+            assertEquals(1, pageAndIndex[2]);
+            int[] pageAndIndex2 = indexFile.findValue("ZEndOfAlphabet St 176, Summerholm, Guadeloupe, 673843");
+            assertEquals(2, pageAndIndex2[0]);
+            assertEquals(4, pageAndIndex2[1]);
+            assertEquals(0, pageAndIndex2[2]);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
     }
 
     @Test
