@@ -8,7 +8,6 @@ import java.util.*;
 public class IndexFile extends DatabaseFile{
     Constants.DataTypes dataType;
     short valueSize;
-
     String tableName;
     int columnIndex;
     String path;

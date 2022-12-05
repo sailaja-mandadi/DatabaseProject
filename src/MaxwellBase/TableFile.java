@@ -22,9 +22,21 @@ public class TableFile extends DatabaseFile{
             throw new IOException("Page is empty");
         }
         Constants.PageType pageType = getPageType(page);
-        this.seek((long) page * pageSize + 0x10);
-        int offset = this.readShort();
+        int offset = getCellOffset(page, 0);
         this.seek((long) page * pageSize + offset);
+        if (pageType == Constants.PageType.TABLE_LEAF) {
+            this.skipBytes(2);
+        } else if (pageType == Constants.PageType.TABLE_INTERIOR) {
+            this.skipBytes(4);
+        }
+        return this.readInt();
+    }
+
+    public int getLastRowId() throws IOException {
+        int lastPage = getLastLeafPage();
+        int offset = getContentStart(lastPage);
+        Constants.PageType pageType = getPageType(lastPage);
+        this.seek((long) lastPage * pageSize + offset);
         if (pageType == Constants.PageType.TABLE_LEAF) {
             this.skipBytes(2);
         } else if (pageType == Constants.PageType.TABLE_INTERIOR) {
@@ -127,16 +139,26 @@ public class TableFile extends DatabaseFile{
         // TODO: Implement
     }
 
-    public void updateRecords(int columnIndex, Object oldValue, Object newValue, String operator) throws IOException {
+    public int updateRecords(int updateIndex, Object newValue, String operator,
+                              String searchColumn, String searchValue) throws IOException {
         // TODO: Implement
+        return 0;
     }
 
     public void deleteRecord(int rowId) throws IOException {
         // TODO: Implement
     }
 
-    public void deleteRecords(int columnIndex, String value, String operator) throws IOException {
+    /**
+     * Delete all records that match the given value
+     * @param columnIndex the column to search
+     * @param value the value to search for
+     * @param operator the operator to use
+     * @return the number of records deleted
+     */
+    public int deleteRecords(int columnIndex, String value, String operator) throws IOException {
         // TODO: Implement
+        return 0;
     }
 
     public int getLastLeafPage() throws IOException {
