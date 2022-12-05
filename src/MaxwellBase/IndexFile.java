@@ -349,7 +349,7 @@ public class IndexFile extends DatabaseFile{
         if (insertionPoint == getNumberOfCells(page) - 1) {
             offset = setContentStart(page, cellSize);
         } else {
-            offset = shiftCells(page, insertionPoint, cellSize, true);
+            offset = shiftCells(page, insertionPoint, cellSize, 1);
         }
         incrementNumberOfCells(page);
 
@@ -447,7 +447,7 @@ public class IndexFile extends DatabaseFile{
         for (int i : rowIds) {
             this.writeInt(i);
         }
-        this.shiftCells(page, index - 1, -4, false);
+        this.shiftCells(page, index - 1, -4, 0);
 
         if (rowIds.size() == 0) {
             // Delete the cell if it is empty
@@ -494,7 +494,7 @@ public class IndexFile extends DatabaseFile{
         Constants.PageType pageType = getPageType(page);
 
         // Make space for the new row id
-        this.shiftCells(page, index - 1, 4, false);
+        this.shiftCells(page, index - 1, 4, 0);
 
         int newOffset = getCellOffset(page, index);
 

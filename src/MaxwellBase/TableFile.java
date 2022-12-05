@@ -120,6 +120,7 @@ public class TableFile extends DatabaseFile{
     public int shiftCells(int page, int precedingCell, int shift, int newRecord) throws IOException {
         // TODO: shift cells
         // Should be similar or identical to shiftCells in IndexFile
+        return 0;
     }
 
     public void updateRecord(int rowId, int columnIndex, Object newValue) throws IOException {
