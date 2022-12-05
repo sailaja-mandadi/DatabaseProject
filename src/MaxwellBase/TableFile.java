@@ -117,6 +117,11 @@ public class TableFile extends DatabaseFile{
         writeRecord(record, page);
     }
 
+    public int shiftCells(int page, int precedingCell, int shift, int newRecord) throws IOException {
+        // TODO: shift cells
+        // Should be similar or identical to shiftCells in IndexFile
+    }
+
     public void updateRecord(int rowId, int columnIndex, Object newValue) throws IOException {
         // TODO: Implement
     }
