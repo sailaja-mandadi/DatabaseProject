@@ -469,20 +469,150 @@ public class Commands {
         }
     }
 
-    public static void parseDelete(ArrayList<String> commandTokens) {
+    public static void parseDelete(ArrayList<String> commandTokens) throws IOException {
         System.out.println("Command: " + tokensToCommandString(commandTokens));
         System.out.println("Stub: This is the deleteRecord method");
-        /* TODO: Your code goes here */
+
+        String columnName = new String();
+        String value = new String();
+        String operator = new String();
+
+        if(commandTokens.get(0).toLowerCase().equals("delete") && commandTokens.get(1).toLowerCase().equals("from") )
+        {
+            Table table = new Table(commandTokens.get(2));
+            int querylength = commandTokens.size();
+            if(querylength>3)
+            {
+                if (!commandTokens.get(3).toLowerCase().equals("where"))
+                {
+                    out.println("Command is InValid");
+                }
+                else
+                {
+                    if (querylength==7 || querylength==8) {
+                        if(commandTokens.get(4).toLowerCase().equals("not")) {
+                            columnName = commandTokens.get(5);
+                            value = commandTokens.get(7);
+                            operator = commandTokens.get(6);
+                                switch(operator){
+                                    case "=" -> {operator = "<>";}
+                                    case "<>" -> {operator = "=";}
+                                    case ">" -> {operator = "<=";}
+                                    case "<" -> {operator = ">=";}
+                                    case ">=" -> {operator = "<";}
+                                    case "<=" -> {operator = ">";}
+                                    default -> {
+                                        System.out.println("Operator is incorrect.\nType \"help;\" to display supported commands.");
+                                    }
+                                }
+                            Constants.DataTypes type = table.getColumnType(columnName);
+                            switch(type){
+                                // YEAR values format : String YYYY
+                                case YEAR -> {
+                                    value = DataFunctions.toDbYear(value);
+                                }
+                                // TIME values format : hh:mm:ss
+                                case TIME -> {
+                                    value = DataFunctions.toDbTime(value);
+                                }
+                                // DATETIME values format : YYYY-MM-DD_hh:mm:ss
+                                case DATETIME -> {
+                                    value = DataFunctions.toDbDateTime(value);
+                                }
+                                //DATE values format : YYYY-MM-DD
+                                case DATE-> {
+                                    value = DataFunctions.toDbDateTime(value+"_00:00:00");
+                                }
+                                default -> {
+                                }
+                            }
+                            if(table.delete(columnName,value,operator))
+                                System.out.print("delete is successful!");
+                            else
+                                System.out.print("delete failed!");
+
+                        }
+                        else{
+                            columnName = commandTokens.get(4);
+                            operator =  commandTokens.get(5);
+                            value =  commandTokens.get(6);
+                            Constants.DataTypes type = table.getColumnType(columnName);
+                            switch(type){
+                                // YEAR values format : String YYYY
+                                case YEAR -> {
+                                    value = DataFunctions.toDbYear(value);
+                                }
+                                // TIME values format : hh:mm:ss
+                                case TIME -> {
+                                    value = DataFunctions.toDbTime(value);
+                                }
+                                // DATETIME values format : YYYY-MM-DD_hh:mm:ss
+                                case DATETIME -> {
+                                    value = DataFunctions.toDbDateTime(value);
+                                }
+                                //DATE values format : YYYY-MM-DD
+                                case DATE-> {
+                                    value = DataFunctions.toDbDateTime(value+"_00:00:00");
+                                }
+                                default -> {
+                                }
+                            }
+                            try {
+                                // System.out.println("test:"+ columnName+" "+value+" "+operator);
+                                if(table.delete(columnName,value,operator))
+                                    System.out.print("delete is successful!");
+                                else
+                                    System.out.print("delete failed!");
+
+                            } catch (IOException e) {
+                                throw new RuntimeException(e);
+                            }
+                        }
+                    }
+                    else{
+                        System.out.println("Query is incorrect.\nType \"help;\" to display supported commands.");
+                        return;
+                    }
+
+                }
+            }
+            else
+            {
+                if(table.delete(null,null,null))
+                    System.out.print("delete is successful!");
+                else
+                    System.out.print("delete failed!");
+            }
+        }
+        else
+        {
+            out.println("Command is Invalid");
+        }
+
+
+
     }
 
 
     /**
      *  Stub method for dropping tables
      */
-    public static void dropTable(ArrayList<String> commandTokens) {
+    public static void dropTable(ArrayList<String> commandTokens) throws IOException {
         // removing record from catalogue
+
         System.out.println("Command: " + tokensToCommandString(commandTokens));
         System.out.println("Stub: This is the dropTable method.");
+        if(commandTokens.get(1).toLowerCase().equals("table"))
+        {
+            Table table = new Table(commandTokens.get(2));
+            table.dropTable();
+        }
+        else
+        {
+            out.println("Command is Invalid");
+        }
+
+
     }
 
 
@@ -491,9 +621,134 @@ public class Commands {
      *  Stub method for updating records
      *  updateString is a String of the user input
      */
-    public static void parseUpdate(ArrayList<String> commandTokens) {
+    public static void parseUpdate(ArrayList<String> commandTokens) throws IOException {
         System.out.println("Command: " + tokensToCommandString(commandTokens));
         System.out.println("Stub: This is the parseUpdate method");
+        String columnName = new String();
+        String value = new String();
+        String operator = new String();
+        String updateCol = new String();
+        String updateVal = new String();
+        if(!commandTokens.get(0).toLowerCase().equals("update") || !commandTokens.get(2).toLowerCase().equals("set"))
+        {
+            out.println("Command is InValid");
+        }
+        else
+        {
+            Table table = new Table(commandTokens.get(1));
+            updateCol = commandTokens.get(3);
+            updateVal = commandTokens.get(5);
+
+            int querylength = commandTokens.size();
+            if(querylength>6) {
+                if (!commandTokens.get(6).toLowerCase().equals("where")) {
+                    out.println("Command is InValid");
+                } else {
+                    if (querylength == 10 || querylength == 11) {
+                        if (commandTokens.get(7).toLowerCase().equals("not")) {
+                            columnName = commandTokens.get(8);
+                            value = commandTokens.get(10);
+                            operator = commandTokens.get(9);
+                            switch (operator) {
+                                case "=" -> {
+                                    operator = "<>";
+                                }
+                                case "<>" -> {
+                                    operator = "=";
+                                }
+                                case ">" -> {
+                                    operator = "<=";
+                                }
+                                case "<" -> {
+                                    operator = ">=";
+                                }
+                                case ">=" -> {
+                                    operator = "<";
+                                }
+                                case "<=" -> {
+                                    operator = ">";
+                                }
+                                default -> {
+                                    System.out.println("Operator is incorrect.\nType \"help;\" to display supported commands.");
+                                }
+                            }
+                            Constants.DataTypes type = table.getColumnType(columnName);
+                            switch(type){
+                                // YEAR values format : String YYYY
+                                case YEAR -> {
+                                    value = DataFunctions.toDbYear(value);
+                                }
+                                // TIME values format : hh:mm:ss
+                                case TIME -> {
+                                    value = DataFunctions.toDbTime(value);
+                                }
+                                // DATETIME values format : YYYY-MM-DD_hh:mm:ss
+                                case DATETIME -> {
+                                    value = DataFunctions.toDbDateTime(value);
+                                }
+                                //DATE values format : YYYY-MM-DD
+                                case DATE-> {
+                                    value = DataFunctions.toDbDateTime(value+"_00:00:00");
+                                }
+                                default -> {
+                                }
+                            }
+                            if (table.update(columnName, value, operator, updateCol, updateVal))
+                                System.out.print("update is successful!");
+                            else
+                                System.out.print("update failed!");
+
+                        } else {
+                            columnName = commandTokens.get(7);
+                            operator = commandTokens.get(8);
+                            value = commandTokens.get(9);
+                            Constants.DataTypes type = table.getColumnType(columnName);
+                            switch(type){
+                                // YEAR values format : String YYYY
+                                case YEAR -> {
+                                    value = DataFunctions.toDbYear(value);
+                                }
+                                // TIME values format : hh:mm:ss
+                                case TIME -> {
+                                    value = DataFunctions.toDbTime(value);
+                                }
+                                // DATETIME values format : YYYY-MM-DD_hh:mm:ss
+                                case DATETIME -> {
+                                    value = DataFunctions.toDbDateTime(value);
+                                }
+                                //DATE values format : YYYY-MM-DD
+                                case DATE-> {
+                                    value = DataFunctions.toDbDateTime(value+"_00:00:00");
+                                }
+                                default -> {
+                                }
+                            }
+                            try {
+                                // System.out.println("test:"+ columnName+" "+value+" "+operator);
+                                if (table.update(columnName, value, operator, updateCol, updateVal))
+                                    System.out.print("update is successful!");
+                                else
+                                    System.out.print("update failed!");
+
+                            } catch (IOException e) {
+                                throw new RuntimeException(e);
+                            }
+                        }
+                    }
+                    else {
+                        System.out.println("Query is incorrect.\nType \"help;\" to display supported commands.");
+                        return;
+                    }
+
+                }
+            }
+            else{
+                if (table.update(null, null, null, updateCol, updateVal))
+                    System.out.print("update is successful!");
+                else
+                    System.out.print("update failed!");
+            }
+        }
     }
 
 
