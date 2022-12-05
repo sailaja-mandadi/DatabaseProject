@@ -8,7 +8,7 @@ import Constants.Constants;
 
 public class test {
     public static void main(String[] args) {
-        try (TableFile tableFile = new TableFile("test.tbl")) {
+        try (TableFile tableFile = new TableFile("test",Settings.getUserDataDirectory())) {
             int[] pageInfo = tableFile.getPageInfo(0);
             System.out.println("Page 0: ");
             System.out.println("\tPage Type: " + pageInfo[0]);
