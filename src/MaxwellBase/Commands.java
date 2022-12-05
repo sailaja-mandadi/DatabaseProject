@@ -245,11 +245,11 @@ public class Commands {
 
         tableName = commandTokens.get(i);
         Table table  = null;
-//        try {
-//            table = new Table(tableName);
-//        } catch (IOException e) {
-//            throw new RuntimeException(e);
-//        }
+       try {
+            table = new Table(tableName);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
         //   System.out.println("test1:"+ tableName+" "+ allColumns+" "+columns);
         i++;
         if(queryLength == i) {
@@ -348,7 +348,9 @@ public class Commands {
     /*
      *  Stub method for inserting a new record into a table.
      */
-    public static void parseInsert (ArrayList<String> commandTokens) {
+
+    //public static ArrayList<String> condition(String a,Str)
+    public static void parseInsert (ArrayList<String> commandTokens) throws IOException {
         System.out.println("Command: " + tokensToCommandString(commandTokens));
         System.out.println("Stub: This is the insertRecord method");
         ArrayList<Constants.DataTypes> columnDatatype = new ArrayList<>();
