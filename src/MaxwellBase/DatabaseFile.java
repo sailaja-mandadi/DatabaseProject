@@ -95,4 +95,9 @@ public abstract class DatabaseFile extends RandomAccessFile {
         pageInfo[4] = this.readInt(); // Parent page
         return pageInfo;
     }
+
+    public Constants.PageType getPageType(int page) throws IOException {
+        this.seek((long) page * pageSize);
+        return Constants.PageType.fromValue(this.readByte());
+    }
 }
