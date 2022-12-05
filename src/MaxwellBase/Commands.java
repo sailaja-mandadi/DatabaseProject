@@ -2,6 +2,7 @@ package MaxwellBase;
 
 import Constants.Constants;
 
+import static java.lang.System.in;
 import static java.lang.System.out;
 
 import java.io.IOException;
@@ -18,7 +19,7 @@ public class Commands {
     /* This method determines what type of command the userCommand is and
      * calls the appropriate method to parse the userCommand String.
      */
-    public static void parseUserCommand (String userCommand) {
+    public static void parseUserCommand (String userCommand) throws IOException {
 
         /* Clean up command string so that each token is separated by a single space */
         userCommand = userCommand.replaceAll("\n", " ");    // Remove newlines
@@ -91,49 +92,98 @@ public class Commands {
         System.out.println(Settings.getCopyright());
     }
 
-    public static void parseCreateTable(String command) {
+    public static void parseCreateTable(String command) throws IOException {
         /* TODO: Before attempting to create new table file, check if the table already exists */
 
         System.out.println("Stub: parseCreateTable method");
         System.out.println("Command: " + command);
         ArrayList<String> commandTokens = commandStringToTokenList(command);
+        ArrayList<Record> result = new ArrayList<>();
+        ArrayList<String> columnNames = new ArrayList<>();
+        ArrayList<Constants.DataTypes> columnTypes = new ArrayList<>();
+        ArrayList<Boolean> primaryKey = new ArrayList<>();
+        ArrayList<Boolean> unique = new ArrayList<>();
+        ArrayList<Boolean> isNull = new ArrayList<>();
 
         /* Extract the table name from the command string token list */
-        String tableFileName = commandTokens.get(2) + ".tbl";
+        String tableFileName = commandTokens.get(2);
+        //ArrayList<String> selectQuery = new ArrayList<>();
+        Table metatable = new Table("maxwellbase_tables");
+        Table metacolumns = new Table("maxwellbase_columns");
+        result = metatable.search("table_name", tableFileName, "=");
+        if(result.get(0).getValues().get(0).toString().toLowerCase().equals(tableFileName.toLowerCase())){
+            System.out.println("Table already exists!");
 
-        /* YOUR CODE GOES HERE */
-
-        /*  Code to create a .tbl file to contain table data */
-        try {
-            /*  Create RandomAccessFile tableFile in read-write mode.
-             *  Note that this doesn't create the table file in the correct directory structure
-             */
-
-            /* Create a new table file whose initial size is one page (i.e. page size number of bytes) */
-            RandomAccessFile tableFile = new RandomAccessFile("data/user_data/" + tableFileName, "rw");
-            tableFile.setLength(Settings.getPageSize());
-
-            /* Write page header with initial configuration */
-            tableFile.seek(0);
-            tableFile.writeInt(0x0D);       // Page type
-            tableFile.seek(0x02);
-            tableFile.writeShort(0x01FF);   // Offset beginning of cell content area
-            tableFile.seek(0x06);
-            tableFile.writeInt(0xFFFFFFFF); // Sibling page to the right
-            tableFile.seek(0x0A);
-            tableFile.writeInt(0xFFFFFFFF); // Parent page
         }
-        catch(Exception e) {
-            System.out.println(e);
+        else{
+            //Parsing the query
+            int iter = 3;
+            if(!commandTokens.get(iter++).equals("(")) {
+                System.out.println("Command is incorrect.\nType \"help;\" to display supported commands.");
+                return;
+            }
+            else {
+                while(!commandTokens.get(iter).equals(")")){
+                    ArrayList<String> temp = new ArrayList<>();
+                    while(!commandTokens.get(iter).equals(",")){
+                        temp.add(commandTokens.get(iter));iter++;
+                    }
+                    if(temp.size() < 2)
+                        {System.out.println("Command is incorrect.\nType \"help;\" to display supported commands.");
+                        return;}
+                    else{
+                        boolean pri = false; boolean uni = false; boolean nullable = true;
+                        columnNames.add(temp.get(0));
+                        columnTypes.add(datatypeOfStr(temp.get(1)));
+                        int it = 2;
+                        while(it < temp.size()){
+                            if(temp.get(it).equals("PRIMARY KEY"))
+                                pri = true;
+                            if(temp.get(it).equals("UNIQUE"))
+                                uni = true;
+                            if(temp.get(it).equals("NOT NULL"))
+                                nullable = false;
+                        }
+                        primaryKey.add(pri);
+                        unique.add(uni);
+                        isNull.add(nullable);
+                    }
+                    iter++;
+                }
+
+
+
+
+                /*  Code to create a .tbl file to contain table data */
+                Table newTable = new Table(tableFileName,columnNames,columnTypes,isNull,true);
+
+                /*  Code to insert an entry in the TABLES meta-data for this new table.
+                 *  i.e. New row in davisbase_tables if you're using that mechanism for meta-data.
+                 */
+                metatable.insert(new ArrayList<Object>(Arrays.asList(tableFileName)));
+
+                /*  Code to insert entries in the COLUMNS meta data for each column in the new table.
+                 *  i.e. New rows in davisbase_columns if you're using that mechanism for meta-data.
+                 */
+                for(int i =0; i< columnTypes.size();i++){
+                    String isNullable = new String();
+                    String columnKey = new String();
+                    if(primaryKey.get(i)) columnKey = "PRI";
+                    else if (unique.get(i)) columnKey = "UNI";
+                    else columnKey = "NULL";
+
+                    if(isNull.get(i))
+                        isNullable = "YES";
+                    else
+                        isNullable = "NO";
+                    metacolumns.insert(new ArrayList<Object>(Arrays.asList(tableFileName,columnNames.get(i),
+                            columnTypes.get(i).toString(), i+1,
+                            isNullable,columnKey)));
+                }
+
+
+            }
         }
-
-        /*  Code to insert an entry in the TABLES meta-data for this new table.
-         *  i.e. New row in davisbase_tables if you're using that mechanism for meta-data.
-         */
-
-        /*  Code to insert entries in the COLUMNS meta data for each column in the new table.
-         *  i.e. New rows in davisbase_columns if you're using that mechanism for meta-data.
-         */
     }
 
     public static void show(ArrayList<String> commandTokens) {
@@ -150,7 +200,7 @@ public class Commands {
         else{
             System.out.println("Command is incorrect.\nType \"help;\" to display supported commands.");
         }
-        /* TODO: Your code goes here */
+
     }
 
     /**
@@ -302,8 +352,88 @@ public class Commands {
         System.out.println("Command: " + tokensToCommandString(commandTokens));
         System.out.println("Stub: This is the insertRecord method");
         ArrayList<Constants.DataTypes> columnDatatype = new ArrayList<>();
-        ArrayList<Object> values = new ArrayList<>();
-        // How to get row ID ?
+
+        if (commandTokens.size() < 5){
+            System.out.println("Command is incorrect.\nType \"help;\" to display supported commands.");
+            return;
+        }
+
+        if (!commandTokens.get(1).toLowerCase().equals("into")){
+            System.out.println("Command is incorrect.\nType \"help;\" to display supported commands.");
+            return;
+        }
+        else{
+            String tableFileName = commandTokens.get(2);
+            Table table = new Table(tableFileName);
+            String[] values = new String[table.columnNames.size()];
+            String[][] temp = new String[table.columnNames.size()][table.columnNames.size()];
+            if (!commandTokens.get(3).equals("(") || !commandTokens.get(3).toLowerCase().equals("values")) {
+                System.out.println("Command is incorrect.\nType \"help;\" to display supported commands.");
+                return;
+            }
+
+            if(commandTokens.get(3).equals("(")){
+                int iter = 4; int cptr = 0;
+                while(!commandTokens.get(iter).equals(")")){
+                    if(!commandTokens.get(iter).equals(",")){
+                        temp[cptr++][0] = commandTokens.get(iter);
+                        iter++;
+                    }
+                }
+                iter++;
+                if (!commandTokens.get(iter).toLowerCase().equals("values") ||
+                        !commandTokens.get(iter+1).equals("(")) {
+                    System.out.println("Command is incorrect.\nType \"help;\" to display supported commands.");
+                    return;
+                }
+                else{
+                    iter+=2;
+                    while(!commandTokens.get(iter).equals(")")){
+                        if(!commandTokens.get(iter).equals(",")){
+                            temp[cptr++][1] = commandTokens.get(iter);
+                            iter++;
+                        }
+                    }
+                }
+
+            }
+            else if(commandTokens.get(3).toLowerCase().equals("values")){
+                int iter = 4, vptr = 0;
+                if (!commandTokens.get(iter).equals("(")) {
+                    System.out.println("Command is incorrect.\nType \"help;\" to display supported commands.");
+                    return;
+                }
+                else{
+                    iter++;
+                    while(!commandTokens.get(iter).equals(")")){
+                        if(!commandTokens.get(iter).equals(",")){
+                            temp[vptr][0]=table.columnNames.get(vptr);
+                            temp[vptr++][1] = commandTokens.get(iter);
+                            iter++;
+                        }
+                    }
+                }
+            }
+
+            for(int i = 0; i < temp.length;i++){
+                for(int j = 0; j< table.columnNames.size();j++){
+                    if(table.columnNames.get(j).toLowerCase().equals(temp[i][0].toLowerCase())){
+                        values[j]=temp[i][1];
+                    }
+                }
+            }
+
+            for(int i =0; i < values.length;i++){
+
+            }
+
+
+            //ArrayList<Object> values = new ArrayList<>(Collections.nCopies(,-1));
+
+
+
+        }
+
         // INSERT INTO Students ( name, ID) Values(sailaja, 4) ;
         // INSERT INTO Students (sailaja,4);
         // Adding column names to columns, values to values list
@@ -337,6 +467,7 @@ public class Commands {
         System.out.println("Command: " + tokensToCommandString(commandTokens));
         System.out.println("Stub: This is the parseUpdate method");
     }
+
 
     public static String tokensToCommandString (ArrayList<String> commandTokens) {
         String commandString = "";
@@ -439,6 +570,24 @@ public class Commands {
         }
         //print a line
         System.out.println(Utils.printSeparator("-",totalLength));
+
+    }
+
+    public static Constants.DataTypes datatypeOfStr(String s){
+        return switch (s) {
+            case "INT" -> Constants.DataTypes.INT;
+            case "TINYINT" -> Constants.DataTypes.TINYINT;
+            case "SMALLINT" -> Constants.DataTypes.SMALLINT;
+            case "BIGINT" -> Constants.DataTypes.BIGINT;
+            case "FLOAT" -> Constants.DataTypes.FLOAT;
+            case "DOUBLE" -> Constants.DataTypes.DOUBLE;
+            case "YEAR" -> Constants.DataTypes.YEAR;
+            case "TIME" -> Constants.DataTypes.TIME;
+            case "DATETIME" -> Constants.DataTypes.DATETIME;
+            case "DATE" -> Constants.DataTypes.DATE;
+            case "TEXT" -> Constants.DataTypes.TEXT;
+            default -> Constants.DataTypes.NULL;
+        };
 
     }
 
