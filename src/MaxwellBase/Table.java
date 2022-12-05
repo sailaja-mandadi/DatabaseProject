@@ -14,9 +14,19 @@ public class Table {
     String tableName;
     TableFile tableFile;
     String path;
-    public Table(String tableName) throws IOException {
+
+    /**
+     * changed signature, to include if the table is a user table or not - to search in correct path
+     * @param tableName
+     * @param userTable
+     * @throws IOException
+     */
+    public Table(String tableName,boolean userTable) throws IOException {
         this.tableName = tableName;
-        this.tableFile = new TableFile(tableName ,Settings.getUserDataDirectory());
+        if(userTable)
+            this.tableFile = new TableFile(tableName ,Settings.getUserDataDirectory());
+        else
+            this.tableFile = new TableFile(tableName ,Settings.getCatalogDirectory());
     }
     public Table(String tableName, ArrayList<String> columnNames, ArrayList<Constants.DataTypes> columnTypes,
                  ArrayList<Boolean> colIsNullable, boolean userDataTable) {
@@ -68,19 +78,22 @@ public class Table {
     }
 
     // Handle rowId generation in here
-    public void insert(ArrayList<Object> value) {
-        //
-
+    public void insert(ArrayList<Object> value) throws IOException {
+        //handle rowid
+        Record rec = new Record(this.columnTypes,value,this.tableFile.getMinRowId(1)+1);
+        tableFile.appendRecord(rec);
     }
 
     // TODO: Implement this
 
     public boolean delete(String columnName, String value, String operator) throws IOException{
+
         return true;
     }
 
     public boolean update(String columnName, String value, String operator, String updateColumn, String updateValue)
             throws IOException{
+
         return true;
     }
 
