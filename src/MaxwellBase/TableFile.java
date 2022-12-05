@@ -121,7 +121,7 @@ public class TableFile extends DatabaseFile{
         // TODO: Implement
     }
 
-    public void updateRecords(int columnIndex, String oldValue, String operator) throws IOException {
+    public void updateRecords(int columnIndex, Object oldValue, Object newValue, String operator) throws IOException {
         // TODO: Implement
     }
 
