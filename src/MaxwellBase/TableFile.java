@@ -117,6 +117,22 @@ public class TableFile extends DatabaseFile{
         writeRecord(record, page);
     }
 
+    public void updateRecord(int rowId, int columnIndex, Object newValue) throws IOException {
+        // TODO: Implement
+    }
+
+    public void updateRecords(int columnIndex, String oldValue, String operator) throws IOException {
+        // TODO: Implement
+    }
+
+    public void deleteRecord(int rowId) throws IOException {
+        // TODO: Implement
+    }
+
+    public void deleteRecords(int columnIndex, String value, String operator) throws IOException {
+        // TODO: Implement
+    }
+
     public int getLastLeafPage() throws IOException {
         int nextPage = getRootPage();
         while (true) {
