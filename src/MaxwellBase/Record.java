@@ -90,4 +90,23 @@ public class Record {
         Object columnValue = values.get(columnIndex);
         return DataFunctions.compare(columnType, columnValue, value, operator);
     }
+
+    public boolean equals(Object other) {
+        if (!(other instanceof Record)) {
+            return false;
+        }
+        Record otherRecord = (Record) other;
+        if (this.columns.size() != otherRecord.columns.size()) {
+            return false;
+        }
+        for (int i = 0; i < this.columns.size(); i++) {
+            if (this.columns.get(i) != otherRecord.columns.get(i)) {
+                return false;
+            }
+            if (!this.values.get(i).equals(otherRecord.values.get(i))) {
+                return false;
+            }
+        }
+        return true;
+    }
 }
