@@ -13,21 +13,23 @@ public class Table {
     ArrayList<Boolean> colIsNullable;
     String tableName;
     TableFile tableFile;
+    String path;
     public Table(String tableName) throws IOException {
         this.tableName = tableName;
         this.tableFile = new TableFile(tableName ,Settings.getUserDataDirectory());
     }
     public Table(String tableName, ArrayList<String> columnNames, ArrayList<Constants.DataTypes> columnTypes,
-                 ArrayList<Boolean> colIsNullable, boolean userDataTable) throws IOException {
+                 ArrayList<Boolean> colIsNullable, boolean userDataTable) {
         this.tableName = tableName;
         this.columnNames = columnNames;
         this.columnTypes = columnTypes;
         this.colIsNullable = colIsNullable;
+        if(userDataTable)
+            path = Settings.getUserDataDirectory();
+        else
+            path = Settings.getCatalogDirectory();
         try {
-            if(userDataTable)
-                this.tableFile = new TableFile(tableName ,Settings.getUserDataDirectory());
-            else
-                this.tableFile = new TableFile(tableName ,Settings.getCatalogDirectory());
+            tableFile = new TableFile(tableName, path);
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
@@ -39,7 +41,7 @@ public class Table {
         // If it doesn't, use tableFile to search
         File file = new File(tableName + "." + columnName );
         if (file.exists()) {
-            try (IndexFile indexFile = new IndexFile(this, columnName)) {
+            try (IndexFile indexFile = new IndexFile(this, columnName, path)) {
                 ArrayList<Integer> rowIds = indexFile.search(value, operator);
                 ArrayList<Record> records = new ArrayList<>();
                 for (int rowId : rowIds) {

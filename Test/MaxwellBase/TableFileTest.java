@@ -8,18 +8,17 @@ import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Scanner;
-import java.util.Random;
 
 import static org.junit.jupiter.api.Assertions.*;
 
 public class TableFileTest {
 
-    TableFile tableFile;
-    ArrayList<Constants.DataTypes> columnTypes;
-    ArrayList<Record> records;
+    public TableFile tableFile;
+    public ArrayList<Constants.DataTypes> columnTypes;
+    public ArrayList<Record> records;
 
     @Before
-    public void initialize(){
+    public void setUp(){
         columnTypes = new ArrayList<>();
         columnTypes.add(Constants.DataTypes.TEXT);
         columnTypes.add(Constants.DataTypes.TEXT);
@@ -29,7 +28,9 @@ public class TableFileTest {
         try {
             File tFile = new File("data/user_data/test.tbl");
             if (tFile.exists()) {
-                tFile.delete();
+                if (!tFile.delete()){
+                    throw new Exception("Could not delete table file");
+                }
             }
             tableFile = new TableFile("test", "data/user_data");
             records = new ArrayList<>();
@@ -159,7 +160,7 @@ public class TableFileTest {
         }
         try {
             ArrayList<Record> searchResult = tableFile.search(2, "8000", ">");
-            assertEquals(result.size(), searchResult.size());
+            assertEquals(result, searchResult);
             for (int i = 0; i < result.size(); i++) {
                 assertEquals(result.get(i), searchResult.get(i));
             }

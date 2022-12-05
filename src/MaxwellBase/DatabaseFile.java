@@ -29,9 +29,6 @@ public abstract class DatabaseFile extends RandomAccessFile {
         this.writeInt(parentPage); // Parent page 0x0A
         this.writeShort(0x00); // Unused space 0x0E
         // Fill the rest of the page with 0x00
-        while (this.getFilePointer() < pageSize) {
-            this.writeByte(0x00);
-        }
         return lastPageIndex;
     }
 
@@ -67,8 +64,7 @@ public abstract class DatabaseFile extends RandomAccessFile {
     }
 
     public short incrementNumberOfCells(int page) throws IOException {
-        this.seek((long) page * pageSize + 0x02);
-        short numberOfCells = this.readShort();
+        short numberOfCells = getNumberOfCells(page);
         this.seek((long) page * pageSize + 0x02);
         this.writeShort(numberOfCells + 1);
         return (short) (numberOfCells + 1);
@@ -81,6 +77,9 @@ public abstract class DatabaseFile extends RandomAccessFile {
     }
 
     public short getCellOffset(int page, int cellNumber) throws IOException {
+        if (cellNumber == -1) {
+            return getCellOffset(page, 0);
+        }
         this.seek((long) page * pageSize + 0x10 + (2L * cellNumber));
         return this.readShort();
     }

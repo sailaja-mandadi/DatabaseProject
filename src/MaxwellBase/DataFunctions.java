@@ -8,7 +8,7 @@ public class DataFunctions {
      * Takes a string and data type and returns the string parsed to the data type
      * @param dataType The data type to parse the string to
      * @param s The string to parse
-     * @return
+     * @return An object of the data type specified
      */
     public static Object parseString(Constants.DataTypes dataType, String s) {
         return switch (dataType) {
@@ -60,7 +60,7 @@ public class DataFunctions {
 
     public static <T extends Comparable<T>> int compareValues(T value1, T value2) {
         if (value1 == null || value2 == null) {
-            return -1;
+            return 1;
         }
         return value1.compareTo(value2);
     }
