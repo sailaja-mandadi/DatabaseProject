@@ -2,17 +2,12 @@ package MaxwellBase;
 
 import Constants.Constants;
 
-import static java.lang.System.in;
 import static java.lang.System.out;
 
 import java.io.IOException;
-import java.io.RandomAccessFile;
-import java.sql.Array;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Arrays;
-import java.util.LinkedList;
-import java.util.Locale;
 
 public class Commands {
 
@@ -138,7 +133,7 @@ public class Commands {
                         int it = 2;
                         while(it < temp.size()){
                             if(temp.get(it).equals("PRIMARY KEY"))
-                                pri = true;
+                                { pri = true;  nullable = false;}
                             if(temp.get(it).equals("UNIQUE"))
                                 uni = true;
                             if(temp.get(it).equals("NOT NULL"))
@@ -150,10 +145,6 @@ public class Commands {
                     }
                     iter++;
                 }
-
-
-
-
                 /*  Code to create a .tbl file to contain table data */
                 Table newTable = new Table(tableFileName,columnNames,columnTypes,isNull,true);
 
@@ -186,7 +177,7 @@ public class Commands {
         }
     }
 
-    public static void show(ArrayList<String> commandTokens) {
+    public static void show(ArrayList<String> commandTokens) throws IOException {
         System.out.println("Command: " + tokensToCommandString(commandTokens));
         //System.out.println("Stub: This is the show method");
         ArrayList<String> selectQuery = new ArrayList<>();
@@ -206,7 +197,7 @@ public class Commands {
     /**
      *  Stub method for executing queries
      */
-    public static void parseQuery(ArrayList<String> commandTokens) {
+    public static void parseQuery(ArrayList<String> commandTokens) throws IOException {
         // Where to be handled later
         //System.out.println("Stub: This is the parseQuery method");
         System.out.println("Command: " + tokensToCommandString(commandTokens));
@@ -270,63 +261,67 @@ public class Commands {
                     columnName = commandTokens.get(i + 1);
                     value = commandTokens.get(i + 3);
                     operator = commandTokens.get(i + 2);
-                    if(table.getColumnType(columnName).toString().equals("DATE"))
-                       // value = DataFunctions.toDate(value);
-
-
                     // System.out.println("test3:"+ columnName+" "+value+" "+operator);
                     switch (operator) {
-                        case "=" -> {
-                            try {
-                                result = table.search(columnName,value,"<>");
-                            } catch (IOException e) {
-                                throw new RuntimeException(e);
-                            }
-                        }
-                        case "<>" -> {
-                            try {
-                                result = table.search(columnName,value,"=");
-                            } catch (IOException e) {
-                                throw new RuntimeException(e);
-                            }
-                        }
-                        case ">" -> {
-                            try {
-                                result = table.search(columnName,value,"<=");
-                            } catch (IOException e) {
-                                throw new RuntimeException(e);
-                            }
-                        }
-                        case "<" -> {
-                            try {
-                                result = table.search(columnName,value,">=");
-                            } catch (IOException e) {
-                                throw new RuntimeException(e);
-                            }
-                        }
-                        case ">=" -> {
-                            try {
-                                result = table.search(columnName,value,"<");
-                            } catch (IOException e) {
-                                throw new RuntimeException(e);
-                            }
-                        }
-                        case "<=" -> {
-                            try {
-                                result = table.search(columnName,value,">");
-                            } catch (IOException e) {
-                                throw new RuntimeException(e);
-                            }
-                        }
+                        case "=" -> {operator = "<>";}
+                        case "<>" -> {operator = "=";}
+                        case ">" -> { operator = "<=";}
+                        case "<" -> {operator = ">=";}
+                        case ">=" -> {operator = "<";}
+                        case "<=" -> {operator = ">";}
                         default -> {
                             System.out.println("Operator is incorrect.\nType \"help;\" to display supported commands.");
                         }
                     }
+                    Constants.DataTypes type = table.getColumnType(columnName);
+                    switch(type){
+                        // YEAR values format : String YYYY
+                        case YEAR -> {
+                            value = DataFunctions.toDbYear(value);
+                        }
+                        // TIME values format : hh:mm:ss
+                        case TIME -> {
+                            value = DataFunctions.toDbTime(value);
+                        }
+                        // DATETIME values format : YYYY-MM-DD_hh:mm:ss
+                        case DATETIME -> {
+                            value = DataFunctions.toDbDateTime(value);
+                        }
+                        //DATE values format : YYYY-MM-DD
+                        case DATE-> {
+                            value = DataFunctions.toDbDateTime(value+"_00:00:00");
+                        }
+                        default -> {
+                        }
+                    }
+                    result = table.search(columnName,value,operator);
+
                 }
                 else{
                     columnName = commandTokens.get(i);
                     operator =  commandTokens.get(i+1);
                     value =  commandTokens.get(i+2);
+                    Constants.DataTypes type = table.getColumnType(columnName);
+                    switch(type){
+                        // YEAR values format : String YYYY
+                        case YEAR -> {
+                            value = DataFunctions.toDbYear(value);
+                        }
+                        // TIME values format : hh:mm:ss
+                        case TIME -> {
+                            value = DataFunctions.toDbTime(value);
+                        }
+                        // DATETIME values format : YYYY-MM-DD_hh:mm:ss
+                        case DATETIME -> {
+                            value = DataFunctions.toDbDateTime(value);
+                        }
+                        //DATE values format : YYYY-MM-DD
+                        case DATE-> {
+                            value = DataFunctions.toDbDateTime(value+"_00:00:00");
+                        }
+                        default -> {
+                        }
+                    }
                     try {
                         // System.out.println("test:"+ columnName+" "+value+" "+operator);
                         result = table.search(columnName,value,operator);
@@ -351,17 +346,17 @@ public class Commands {
 
     //public static ArrayList<String> condition(String a,Str)
     public static void parseInsert (ArrayList<String> commandTokens) throws IOException {
-        System.out.println("Command: " + tokensToCommandString(commandTokens));
-        System.out.println("Stub: This is the insertRecord method");
+        out.println("Command: " + tokensToCommandString(commandTokens));
+        out.println("Stub: This is the insertRecord method");
         ArrayList<Constants.DataTypes> columnDatatype = new ArrayList<>();
 
         if (commandTokens.size() < 5){
-            System.out.println("Command is incorrect.\nType \"help;\" to display supported commands.");
+            out.println("Command is incorrect.\nType \"help;\" to display supported commands.");
             return;
         }
 
         if (!commandTokens.get(1).toLowerCase().equals("into")){
-            System.out.println("Command is incorrect.\nType \"help;\" to display supported commands.");
+            out.println("Command is incorrect.\nType \"help;\" to display supported commands.");
             return;
         }
         else{
@@ -370,7 +365,7 @@ public class Commands {
             String[] values = new String[table.columnNames.size()];
             String[][] temp = new String[table.columnNames.size()][table.columnNames.size()];
             if (!commandTokens.get(3).equals("(") || !commandTokens.get(3).toLowerCase().equals("values")) {
-                System.out.println("Command is incorrect.\nType \"help;\" to display supported commands.");
+                out.println("Command is incorrect.\nType \"help;\" to display supported commands.");
                 return;
             }
 
@@ -385,7 +380,7 @@ public class Commands {
                 iter++;
                 if (!commandTokens.get(iter).toLowerCase().equals("values") ||
                         !commandTokens.get(iter+1).equals("(")) {
-                    System.out.println("Command is incorrect.\nType \"help;\" to display supported commands.");
+                    out.println("Command is incorrect.\nType \"help;\" to display supported commands.");
                     return;
                 }
                 else{
@@ -402,7 +397,7 @@ public class Commands {
             else if(commandTokens.get(3).toLowerCase().equals("values")){
                 int iter = 4, vptr = 0;
                 if (!commandTokens.get(iter).equals("(")) {
-                    System.out.println("Command is incorrect.\nType \"help;\" to display supported commands.");
+                    out.println("Command is incorrect.\nType \"help;\" to display supported commands.");
                     return;
                 }
                 else{
@@ -416,31 +411,62 @@ public class Commands {
                     }
                 }
             }
-
+            // create an array of values at appropriate positions
             for(int i = 0; i < temp.length;i++){
-                for(int j = 0; j< table.columnNames.size();j++){
-                    if(table.columnNames.get(j).toLowerCase().equals(temp[i][0].toLowerCase())){
+                int j = table.columnNames.indexOf(temp[i][0]);
                         values[j]=temp[i][1];
+            }
+            // for each null value , check if it can be nullable
+            int flag = 0;
+            for( flag = 0; flag < values.length;flag++){
+                if(values[flag].equals(null)){
+                    if (table.colIsNullable.get(flag)){
+                        continue;
+                    }
+                    else{
+                        out.println(table.columnNames.get(flag)+"can not be NULL!");
+                        return;
                     }
                 }
             }
-
-            for(int i =0; i < values.length;i++){
-
+            // if all values are checked, call insert
+            if(flag == table.columnNames.size()){
+                ArrayList<Object> insertvalues = new ArrayList<>();
+                for( int i = 0; i < values.length;i++){
+                    if(!values[i].equals(null)){
+                        Constants.DataTypes type = table.columnTypes.get(i);
+                        switch(type){
+                            // YEAR values format : String YYYY
+                            case YEAR -> {
+                                String s = DataFunctions.toDbYear(values[i]);
+                                insertvalues.add(DataFunctions.parseString(type,s));
+                            }
+                            // TIME values format : hh:mm:ss
+                            case TIME -> {
+                                String s = DataFunctions.toDbTime(values[i]);
+                                insertvalues.add(DataFunctions.parseString(type,s));
+                            }
+                            // DATETIME values format : YYYY-MM-DD_hh:mm:ss
+                            case DATETIME -> {
+                                String s = DataFunctions.toDbDateTime(values[i]);
+                                insertvalues.add(DataFunctions.parseString(type,s));
+                            }
+                            //DATE values format : YYYY-MM-DD
+                            case DATE-> {
+                                String s = DataFunctions.toDbDateTime(values[i]+"_00:00:00");
+                                insertvalues.add(DataFunctions.parseString(type,s));
+                            }
+                            default -> {
+                                insertvalues.add(DataFunctions.parseString(type,values[i]));
+                            }
+                        }
+                        }
+                    else
+                       insertvalues.add(null);
+                }
+                table.insert(insertvalues);
             }
-
-
-            //ArrayList<Object> values = new ArrayList<>(Collections.nCopies(,-1));
-
-
-
         }
-
-        // INSERT INTO Students ( name, ID) Values(sailaja, 4) ;
-        // INSERT INTO Students (sailaja,4);
-        // Adding column names to columns, values to values list
-        /* TODO: Your code goes here */
-
     }
 
     public static void parseDelete(ArrayList<String> commandTokens) {
@@ -532,22 +558,41 @@ public class Commands {
         }
         else{
             for(String column : selColumns){
-                for(int i = 0; i < table.columnNames.size();i++ )
-                    if(table.columnNames.get(i).equals(column))
-                        columnNum.add(i);
+               columnNum.add(table.columnNames.indexOf(column));
             }
         }
-
         Collections.sort(columnNum);
-
+        //for each column
         for(Integer i : columnNum){
             int maxLength = table.columnNames.get(i).length();
-            for(int iter = 0; iter < data.size();i++){
-                int len = data.get(i).getValues().get(i).toString().trim().length();
-                maxLength = len > maxLength ? len : maxLength;
+            // loop through every record
+            Constants.DataTypes type = table.getColumnType(table.columnNames.get(i));
+            switch(type) {
+                // in DB as byte , display as YYYY
+                case YEAR -> {
+                    maxLength = 4 > maxLength ? 4 : maxLength;
+                }
+                case TIME -> {
+                    maxLength = 8 > maxLength ? 8 : maxLength;
+                }
+                case DATETIME -> {
+                    maxLength = 19 > maxLength ? 19 : maxLength;
+                }
+                case DATE -> {
+                    maxLength = 10 > maxLength ? 10 : maxLength;
+                }
+                default -> {
+                    for (int iter = 0; iter < data.size(); i++) {
+                        int len = data.get(i).getValues().get(i).toString().trim().length();
+                        maxLength = len > maxLength ? len : maxLength;
+                    }
+                }
             }
             colSize.add(maxLength);
+
         }
+
+
         int totalLength = (columnNum.size()-1)*3 + 4 ;
         for(Integer i : colSize)
             totalLength +=colSize.get(i);
@@ -566,7 +611,28 @@ public class Commands {
         for(int rec =0; rec<data.size();rec++){
             temp = "| ";
             for(Integer col : columnNum){
-                temp +=" "+ String.format("%-"+colSize.get(col)+"s",data.get(rec).getValues().get(col).toString().trim()) + " |";
+                Constants.DataTypes type = table.getColumnType(table.columnNames.get(col));
+                String dataVal = new String();
+                switch(type) {
+                    // in DB as byte , display as YYYY
+                    case YEAR -> {
+                        dataVal = DataFunctions.fromDbYear((byte)data.get(rec).getValues().get(col));
+                    }
+                    case TIME -> {
+                        dataVal = DataFunctions.fromDbTime((int)data.get(rec).getValues().get(col));
+                    }
+                    case DATETIME -> {
+                        dataVal = DataFunctions.fromDbDateTime((long)data.get(rec).getValues().get(col));
+                    }
+                    case DATE -> {
+                        dataVal = DataFunctions.fromDbDateTime((long)data.get(rec).getValues().get(col)).substring(0,10);
+                    }
+                    default -> {
+                        dataVal =data.get(rec).getValues().get(col).toString().trim();
+                    }
+                }
+
+                temp +=" "+ String.format("%-"+colSize.get(col)+"s",dataVal) + " |";
             }
             System.out.println(temp);
         }
