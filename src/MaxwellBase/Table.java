@@ -9,16 +9,20 @@ import java.util.ArrayList;
 public class Table {
     ArrayList<String> columnNames;
     ArrayList<Constants.DataTypes> columnTypes;
+
+    ArrayList<Boolean> colIsNullable;
     String tableName;
     TableFile tableFile;
     public Table(String tableName) throws IOException {
         this.tableName = tableName;
         this.tableFile = new TableFile(tableName ,Settings.getUserDataDirectory());
     }
-    public Table(String tableName, ArrayList<String> columnNames, ArrayList<Constants.DataTypes> columnTypes, boolean userDataTable) throws IOException {
+    public Table(String tableName, ArrayList<String> columnNames, ArrayList<Constants.DataTypes> columnTypes,
+                 ArrayList<Boolean> colIsNullable, boolean userDataTable) throws IOException {
         this.tableName = tableName;
         this.columnNames = columnNames;
         this.columnTypes = columnTypes;
+        this.colIsNullable = colIsNullable;
         try {
             if(userDataTable)
                 this.tableFile = new TableFile(tableName ,Settings.getUserDataDirectory());
@@ -68,8 +72,18 @@ public class Table {
     }
 
     // TODO: Implement this
-    public void remove() {
 
+    public boolean delete(String columnName, String value, String operator) throws IOException{
+        return true;
+    }
+
+    public boolean update(String columnName, String value, String operator, String updateColumn, String updateValue)
+            throws IOException{
+        return true;
+    }
+
+    public boolean dropTable(){
+        return true;
     }
 
 }

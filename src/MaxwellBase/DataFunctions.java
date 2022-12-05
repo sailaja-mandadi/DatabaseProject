@@ -71,17 +71,34 @@ public class DataFunctions {
      * @param date format - YYYY-MM-DD_hh:mm:ss
      * @return year in INT format with 2000 as base year
      */
-    public static int toYear(String date){
-
-        return 0;
+    public static int toDbYear(String date)
+    {
+       String k = date.substring(0,4);
+       int number = Integer.parseInt(k);
+       return number-2000;
     }
 
+    /**
+     * Year to required format of year
+     * @param date format - YY
+     * @return Year in String Format
+     */
+    public static int fromDbYear(int date)
+    {
+        int res = date+2000;
+       //
+        return 0;
+               // res.toString();
+    }
     /**
      * time as milliseconds from mid night
      * @param time
      * @return
      */
-    public static int toTime(String time){
+    public static int toTime(String time)
+    {
+
+
         return 0;
     }
 
