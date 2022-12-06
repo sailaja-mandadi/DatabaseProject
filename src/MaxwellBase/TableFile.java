@@ -185,6 +185,17 @@ public class TableFile extends DatabaseFile{
         if (index == 0 && getParentPage(page) != 0xFFFFFFFF) {
             updatePagePointer(getParentPage(page), index, getMinRowId(page));
         }
+        // Decrement number of cells
+        int numCells = getNumberOfCells(page);
+        this.seek((long) page * pageSize + 0x02);
+        this.writeShort((short) (numCells - 1));
+        // Write 0x00 between the end of the cell pointer array and the start of the content
+        int contentStart = getContentStart(page);
+        int cellPointerArrayEnd = 0x10 + 2 * numCells;
+        this.seek((long) page * pageSize + cellPointerArrayEnd);
+        for (int i = cellPointerArrayEnd; i < contentStart; i++) {
+            this.writeByte(0x00);
+        }
     }
 
     public void updatePagePointer(int page, int index, int newRowId) throws IOException {

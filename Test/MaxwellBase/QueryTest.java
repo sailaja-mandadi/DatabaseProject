@@ -46,6 +46,11 @@ public class QueryTest {
     @Test
     public void testDeleteFromTable() throws IOException {
         Commands.parseUserCommand("CREATE TABLE test (col1 TEXT, col2 INT, col3 TEXT)");
+        Commands.parseUserCommand("INSERT INTO test VALUES (\"test1\", 1, \"test2\")");
+        Commands.parseUserCommand("INSERT INTO test VALUES (\"test3\", 2, \"test4\")");
+        Commands.parseUserCommand("INSERT INTO test VALUES (\"test5\", 1, \"test6\")");
+        Commands.parseUserCommand("DELETE FROM test WHERE col2 = 1");
+        Commands.parseUserCommand("SELECT * FROM test");
         Commands.parseUserCommand("DROP TABLE test");
     }
 }
