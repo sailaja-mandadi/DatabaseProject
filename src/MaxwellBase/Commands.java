@@ -38,49 +38,42 @@ public class Commands {
          *  You will want to rewrite this method to interpret more complex commands.
          */
         switch (commandTokens.get(0).toLowerCase()) {
-            case "show":
+            case "show" -> {
                 System.out.println("Case: SHOW");
                 show(commandTokens);
-                break;
-            case "select":
+            }
+            case "select" -> {
                 System.out.println("Case: SELECT");
                 parseQuery(commandTokens);
-                break;
-            case "create":
+            }
+            case "create" -> {
                 System.out.println("Case: CREATE");
                 if (commandTokens.get(1).equalsIgnoreCase("index")) {
                     parseCreateIndex(userCommand);
+                } else {
+                    parseCreateTable(userCommand);
                 }
-                else{parseCreateTable(userCommand);}
-                break;
-            case "insert":
+            }
+            case "insert" -> {
                 System.out.println("Case: INSERT");
                 parseInsert(commandTokens);
-                break;
-            case "delete":
+            }
+            case "delete" -> {
                 System.out.println("Case: DELETE");
                 parseDelete(commandTokens);
-                break;
-            case "update":
+            }
+            case "update" -> {
                 System.out.println("Case: UPDATE");
                 parseUpdate(commandTokens);
-                break;
-            case "drop":
+            }
+            case "drop" -> {
                 System.out.println("Case: DROP");
                 dropTable(commandTokens);
-                break;
-            case "help":
-                help();
-                break;
-            case "version":
-                displayVersion();
-                break;
-            case "exit", "quit":
-                Settings.setExit(true);
-                break;
-            default:
-                System.out.println("I didn't understand the command: \"" + userCommand + "\"");
-                break;
+            }
+            case "help" -> help();
+            case "version" -> displayVersion();
+            case "exit", "quit" -> Settings.setExit(true);
+            default -> System.out.println("I didn't understand the command: \"" + userCommand + "\"");
         }
     }
 
@@ -383,11 +376,12 @@ public class Commands {
         }
         else{
             String tableFileName = commandTokens.get(2).toLowerCase();
-            File tableFile = new File(tableFileName);
-            if (!tableFile.exists()){
+            ArrayList<Record> result = Table.tableTable.search("table_name", tableFileName, "=");
+            if (result.size() == 0) {
                 out.println("Table " + tableFileName + " does not exist.");
                 return;
             }
+
             Table table = new Table(tableFileName,true);
             String[] values = new String[table.columnNames.size()];
             String[][] temp = new String[table.columnNames.size()][2];
