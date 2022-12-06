@@ -139,12 +139,6 @@ public class TableFile extends DatabaseFile{
         // TODO: Implement
     }
 
-    public int updateRecords(int updateIndex, Object newValue, String operator,
-                              String searchColumn, String searchValue) throws IOException {
-        // TODO: Implement
-        return 0;
-    }
-
     public void deleteRecord(int rowId) throws IOException {
         // TODO: Implement
     }

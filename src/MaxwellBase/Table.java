@@ -23,10 +23,16 @@ public class Table {
      */
     public Table(String tableName,boolean userTable) throws IOException {
         this.tableName = tableName;
-        if(userTable)
+        if(userTable) {
             this.tableFile = new TableFile(tableName ,Settings.getUserDataDirectory());
-        else
+            this.path = Settings.getUserDataDirectory();
+        }
+        else {
             this.tableFile = new TableFile(tableName ,Settings.getCatalogDirectory());
+            this.path = Settings.getCatalogDirectory();
+        }
+        loadTable(tableName);
+
     }
     public Table(String tableName, ArrayList<String> columnNames, ArrayList<Constants.DataTypes> columnTypes,
                  ArrayList<Boolean> colIsNullable, boolean userDataTable) {
@@ -35,11 +41,11 @@ public class Table {
         this.columnTypes = columnTypes;
         this.colIsNullable = colIsNullable;
         if(userDataTable)
-            path = Settings.getUserDataDirectory();
+            this.path = Settings.getUserDataDirectory();
         else
-            path = Settings.getCatalogDirectory();
+           this.path = Settings.getCatalogDirectory();
         try {
-            tableFile = new TableFile(tableName, path);
+            tableFile = new TableFile(tableName, this.path);
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
@@ -97,6 +103,15 @@ public class Table {
 
     // TODO: Implement this
 
+    /**
+     *
+     * @param columnName
+     * @param value
+     * @param operator
+     * @return No of rows deleted
+     * @throws IOException
+     */
+
     public int delete(String columnName, String value, String operator) throws IOException{
         // Check if index exists for columnName
         if (indexExists(columnName)) {
@@ -119,6 +134,16 @@ public class Table {
         }
     }
 
+    /**
+     *
+     * @param searchColumn
+     * @param searchValue
+     * @param operator
+     * @param updateColumn
+     * @param updateValue
+     * @return no of rows updated
+     * @throws IOException
+     */
     public int update(String searchColumn, String searchValue, String operator, String updateColumn, String updateValue)
             throws IOException{
 
@@ -151,13 +176,38 @@ public class Table {
         return 0;
     }
 
-    public boolean dropTable(){
-        return true;
+    /**
+     *
+     * @return
+     */
+    public boolean dropTable() {
+       // java file.delete
+        try {
+            tableTable.delete("table_name",this.tableName,"=");
+            columnTable.delete("table_name",this.tableName,"=");
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+        File tableFile = new File(path + "/" + tableName + ".tbl");
+        return tableFile.delete();
     }
 
     public boolean indexExists(String columnName) {
         File file = new File(path + "/" + tableName + "." + columnName + ".ndx");
         return file.exists();
+    }
+
+    public void createIndex(String columnName) {
+        try {
+            IndexFile indexFile = getIndexFile(columnName);
+
+            if (indexFile == null) {
+                indexFile = new IndexFile(this, columnName, path);
+                indexFile.initializeIndex();
+            }
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
     }
 
 

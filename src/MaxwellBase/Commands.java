@@ -49,7 +49,7 @@ public class Commands {
                 if (commandTokens.get(1).toLowerCase().equals("index")) {
                     parseCreateIndex(userCommand);
                 }
-                parseCreateTable(userCommand);
+                else{parseCreateTable(userCommand);}
                 break;
             case "insert":
                 System.out.println("Case: INSERT");
@@ -98,10 +98,18 @@ public class Commands {
             System.out.println("Command is incorrect.\nType \"help;\" to display supported commands.");
             return;
         }
+        //Test
+        //System.out.println("parseCreateIndex: tableName-"+commandTokens.get(2).toLowerCase()+" " +
+        //        "column_name:"+commandTokens.get(4).toLowerCase());
+        //test end
+
         Table table = new Table(commandTokens.get(2).toLowerCase(),true);
+        /*
         IndexFile indexFile = new IndexFile(table,commandTokens.get(4).toLowerCase(),
                 Settings.getUserDataDirectory());
         indexFile.initializeIndex();
+        */
+        table.createIndex(commandTokens.get(4).toLowerCase());
     }
 
     public static void parseCreateTable(String command) throws IOException {
@@ -120,12 +128,13 @@ public class Commands {
         /* Extract the table name from the command string token list */
         String tableFileName = commandTokens.get(2).toLowerCase();
         //ArrayList<String> selectQuery = new ArrayList<>();
+
         Table metatable = new Table("maxwellbase_tables",false);
         Table metacolumns = new Table("maxwellbase_columns",false);
         result = metatable.search("table_name", tableFileName, "=");
-        if(result.get(0).getValues().get(0).toString().toLowerCase().equals(tableFileName.toLowerCase())){
+        //if(result.get(0).getValues().get(0).toString().toLowerCase().equals(tableFileName.toLowerCase())){
+        if(result.size()!=0){
             System.out.println("Table already exists!");
-
         }
         else{
             //Parsing the query
@@ -137,7 +146,7 @@ public class Commands {
             else {
                 while(!commandTokens.get(iter).equals(")")){
                     ArrayList<String> temp = new ArrayList<>();
-                    while(!commandTokens.get(iter).equals(",")){
+                    while(!commandTokens.get(iter).equals(",") && !commandTokens.get(iter).equals(")") ){
                         temp.add(commandTokens.get(iter));iter++;
                     }
                     if(temp.size() < 2)
@@ -149,18 +158,21 @@ public class Commands {
                         columnTypes.add(datatypeOfStr(temp.get(1)));
                         int it = 2;
                         while(it < temp.size()){
-                            if(temp.get(it).equals("PRIMARY KEY"))
-                                { pri = true;  nullable = false;}
-                            if(temp.get(it).equals("UNIQUE"))
-                                uni = true;
-                            if(temp.get(it).equals("NOT NULL"))
-                                nullable = false;
+                            if(temp.get(it).toUpperCase().equals("PRIMARY_KEY")) // design: table constraint not null should be given as PRIMARY_KEY
+                                { pri = true;  nullable = false; it++;}
+                            else if(temp.get(it).toUpperCase().equals("UNIQUE"))
+                            {uni = true;it++;}
+                            else if(temp.get(it).toUpperCase().equals("NOT_NULL"))  // design: table constraint not null should be given as NOT_NULL
+                            { nullable = false;it++;}
+                            else {System.out.println("Command is incorrect.\nType \"help;\" to display supported commands.");
+                                return;}
                         }
                         primaryKey.add(pri);
                         unique.add(uni);
                         isNull.add(nullable);
                     }
                     iter++;
+                    if(iter>=commandTokens.size()) break;
                 }
                 /*  Code to create a .tbl file to contain table data */
                 Table newTable = new Table(tableFileName,columnNames,columnTypes,isNull,true);
@@ -184,8 +196,9 @@ public class Commands {
                         isNullable = "YES";
                     else
                         isNullable = "NO";
-                    metacolumns.insert(new ArrayList<Object>(Arrays.asList(tableFileName,columnNames.get(i),
-                            columnTypes.get(i).toString(), i+1,
+                    //System.out.print("")
+                    metacolumns.insert(new ArrayList<Object>(Arrays.asList(tableFileName.toLowerCase(),columnNames.get(i).toString().toLowerCase(),
+                            columnTypes.get(i).toString(),(byte)(i+1),
                             isNullable,columnKey)));
                 }
 
@@ -200,15 +213,9 @@ public class Commands {
         ArrayList<Record> result = new ArrayList<>();
 
         if (commandTokens.get(1).toLowerCase().equals("tables")) {
-            /*
-            selectQuery.add("SELECT");
-            selectQuery.add("table_name"); //column-names column from
-            selectQuery.add("FROM");
-            selectQuery.add("maxwellbase_tables");
-            parseQuery(selectQuery);
-            */
             Table table = new Table("maxwellbase_tables",false);
             result = table.search(null,null,null);
+            //System.out.print("records returned:"+result.size());
             Commands.display(table,result,new ArrayList<String>(),true);
         }
         else{
@@ -260,22 +267,24 @@ public class Commands {
         tableName = commandTokens.get(i).toLowerCase();
         Table table  = null;
        try {
-            table = new Table(tableName,true);
+           if(tableName.equals("maxwellbase_columns") || tableName.equals("maxwellbase_tables"))
+                table = new Table(tableName,false);
+           else
+               table = new Table(tableName,true);
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
-        //   System.out.println("test1:"+ tableName+" "+ allColumns+" "+columns);
+          // System.out.println("test1:"+ tableName+" "+ allColumns+" "+columns);
         i++;
         if(queryLength == i) {
             try {
                 //System.out.println("")
                 result = table.search(null, null, null);
-                // System.out.println("test2:"+ tableName+" "+ allColumns+" "+columns);
+                 //System.out.println("test2:"+ tableName+" "+ allColumns+" "+columns);
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }
         }
-
         else if(commandTokens.get(i).toLowerCase().equals("where")){
             System.out.println("i,test:"+ i );
             i++;
@@ -359,8 +368,10 @@ public class Commands {
                 return;
             }
 
-            Commands.display(table,result,columns,allColumns);
+
         }
+        Commands.display(table,result,columns,allColumns);
+
     }
 
     /*
@@ -374,21 +385,21 @@ public class Commands {
         ArrayList<Constants.DataTypes> columnDatatype = new ArrayList<>();
 
         if (commandTokens.size() < 5){
-            out.println("Command is incorrect.\nType \"help;\" to display supported commands.");
+            out.println("1Command is incorrect.\nType \"help;\" to display supported commands.");
             return;
         }
 
         if (!commandTokens.get(1).toLowerCase().equals("into")){
-            out.println("Command is incorrect.\nType \"help;\" to display supported commands.");
+            out.println("2Command is incorrect.\nType \"help;\" to display supported commands.");
             return;
         }
         else{
             String tableFileName = commandTokens.get(2).toLowerCase();
             Table table = new Table(tableFileName,true);
             String[] values = new String[table.columnNames.size()];
-            String[][] temp = new String[table.columnNames.size()][table.columnNames.size()];
-            if (!commandTokens.get(3).equals("(") || !commandTokens.get(3).toLowerCase().equals("values")) {
-                out.println("Command is incorrect.\nType \"help;\" to display supported commands.");
+            String[][] temp = new String[table.columnNames.size()][2];
+            if (!commandTokens.get(3).equals("(") && !commandTokens.get(3).toLowerCase().equals("values")) {
+                out.println("3Command is incorrect.\nType \"help;\" to display supported commands.");
                 return;
             }
 
@@ -397,22 +408,23 @@ public class Commands {
                 while(!commandTokens.get(iter).equals(")")){
                     if(!commandTokens.get(iter).equals(",")){
                         temp[cptr++][0] = commandTokens.get(iter);
-                        iter++;
                     }
+                    iter++;
                 }
                 iter++;
                 if (!commandTokens.get(iter).toLowerCase().equals("values") ||
                         !commandTokens.get(iter+1).equals("(")) {
-                    out.println("Command is incorrect.\nType \"help;\" to display supported commands.");
+                    out.println("4Command is incorrect.\nType \"help;\" to display supported commands.");
                     return;
                 }
                 else{
                     iter+=2;
+                    cptr =0;
                     while(!commandTokens.get(iter).equals(")")){
                         if(!commandTokens.get(iter).equals(",")){
                             temp[cptr++][1] = commandTokens.get(iter);
-                            iter++;
                         }
+                        iter++;
                     }
                 }
 
@@ -420,7 +432,7 @@ public class Commands {
             else if(commandTokens.get(3).toLowerCase().equals("values")){
                 int iter = 4, vptr = 0;
                 if (!commandTokens.get(iter).equals("(")) {
-                    out.println("Command is incorrect.\nType \"help;\" to display supported commands.");
+                    out.println("5Command is incorrect.\nType \"help;\" to display supported commands.");
                     return;
                 }
                 else{
@@ -429,8 +441,8 @@ public class Commands {
                         if(!commandTokens.get(iter).equals(",")){
                             temp[vptr][0]=table.columnNames.get(vptr);
                             temp[vptr++][1] = commandTokens.get(iter);
-                            iter++;
                         }
+                        iter++;
                     }
                 }
             }
@@ -442,7 +454,7 @@ public class Commands {
             // for each null value , check if it can be nullable
             int flag = 0;
             for( flag = 0; flag < values.length;flag++){
-                if(values[flag].equals(null)){
+                if(values[flag] == null){
                     if (table.colIsNullable.get(flag)){
                         continue;
                     }
@@ -549,10 +561,11 @@ public class Commands {
                                 default -> {
                                 }
                             }
-                            if(table.delete(columnName.toLowerCase(),value,operator))
-                                System.out.print("delete is successful!");
+                            int deletedRows = table.delete(columnName.toLowerCase(),value,operator);
+                            if(deletedRows > 0)
+                                System.out.println(deletedRows+ " rows are deleted!");
                             else
-                                System.out.print("delete failed!");
+                                System.out.println("delete failed!");
 
                         }
                         else{
@@ -582,10 +595,11 @@ public class Commands {
                             }
                             try {
                                 // System.out.println("test:"+ columnName+" "+value+" "+operator);
-                                if(table.delete(columnName.toLowerCase(),value,operator))
-                                    System.out.print("delete is successful!");
+                                int deletedRows = table.delete(columnName.toLowerCase(),value,operator);
+                                if(deletedRows > 0)
+                                    System.out.println(deletedRows+ " rows are deleted!");
                                 else
-                                    System.out.print("delete failed!");
+                                    System.out.println("delete failed!");
 
                             } catch (IOException e) {
                                 throw new RuntimeException(e);
@@ -601,10 +615,12 @@ public class Commands {
             }
             else
             {
-                if(table.delete(null,null,null))
-                    System.out.print("delete is successful!");
+                int deletedRows = table.delete(null, null, null);
+                if(deletedRows > 0)
+                    System.out.println(deletedRows+ " rows are deleted!");
                 else
-                    System.out.print("delete failed!");
+                    System.out.println("delete failed!");
+
             }
         }
         else
@@ -716,10 +732,11 @@ public class Commands {
                                 default -> {
                                 }
                             }
-                            if (table.update(columnName.toLowerCase(), value, operator, updateCol, updateVal))
-                                System.out.print("update is successful!");
+                            int updated = table.update(columnName.toLowerCase(), value, operator, updateCol, updateVal);
+                            if (updated > 0)
+                                System.out.println(updated+" rows updated!");
                             else
-                                System.out.print("update failed!");
+                                System.out.println("update failed!");
 
                         } else {
                             columnName = commandTokens.get(7);
@@ -731,15 +748,15 @@ public class Commands {
                                 case YEAR -> {
                                     value = DataFunctions.toDbYear(value);
                                 }
-                                // TIME values format : hh:mm:ss
+                                // TIME values format : String hh:mm:ss
                                 case TIME -> {
                                     value = DataFunctions.toDbTime(value);
                                 }
-                                // DATETIME values format : YYYY-MM-DD_hh:mm:ss
+                                // DATETIME values format :String YYYY-MM-DD_hh:mm:ss
                                 case DATETIME -> {
                                     value = DataFunctions.toDbDateTime(value);
                                 }
-                                //DATE values format : YYYY-MM-DD
+                                //DATE values format :String YYYY-MM-DD
                                 case DATE-> {
                                     value = DataFunctions.toDbDateTime(value+"_00:00:00");
                                 }
@@ -748,10 +765,11 @@ public class Commands {
                             }
                             try {
                                 // System.out.println("test:"+ columnName+" "+value+" "+operator);
-                                if (table.update(columnName.toLowerCase(), value, operator, updateCol, updateVal))
-                                    System.out.print("update is successful!");
+                                int updated = table.update(columnName.toLowerCase(), value, operator, updateCol, updateVal);
+                                if (updated > 0)
+                                    System.out.println(updated+" rows updated!");
                                 else
-                                    System.out.print("update failed!");
+                                    System.out.println("update failed!");
 
                             } catch (IOException e) {
                                 throw new RuntimeException(e);
@@ -766,10 +784,11 @@ public class Commands {
                 }
             }
             else{
-                if (table.update(null, null, null, updateCol, updateVal))
-                    System.out.print("update is successful!");
+                int updated = table.update(null, null, null, updateCol, updateVal);
+                if (updated > 0)
+                    System.out.println(updated+" rows updated!");
                 else
-                    System.out.print("update failed!");
+                    System.out.println("update failed!");
             }
         }
     }
@@ -860,8 +879,8 @@ public class Commands {
                     maxLength = 10 > maxLength ? 10 : maxLength;
                 }
                 default -> {
-                    for (int iter = 0; iter < data.size(); i++) {
-                        int len = data.get(i).getValues().get(i).toString().trim().length();
+                    for (int iter = 0; iter < data.size(); iter++) {
+                        int len = data.get(iter).getValues().get(i).toString().trim().length();
                         maxLength = len > maxLength ? len : maxLength;
                     }
                 }
@@ -920,7 +939,7 @@ public class Commands {
     }
 
     public static Constants.DataTypes datatypeOfStr(String s){
-        return switch (s) {
+        return switch (s.toUpperCase()) {
             case "INT" -> Constants.DataTypes.INT;
             case "TINYINT" -> Constants.DataTypes.TINYINT;
             case "SMALLINT" -> Constants.DataTypes.SMALLINT;

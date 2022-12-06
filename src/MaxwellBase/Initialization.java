@@ -54,33 +54,12 @@ public class Initialization {
         File catalog_directory = new File(Settings.getCatalogDirectory());
 
         if (catalog_directory.exists()){
-            boolean tablesExist = false ;
-            boolean columnsExist = false ;
-            String[] listOfExistingFiles = catalog_directory.list();
-            for (String tableName : listOfExistingFiles)
-            {
-                if (tableName.equals("maxwellbase_tables.tbl")){
-                    tablesExist = true;
-                }
-                if (tableName.equals("maxwellbase_columns.tbl")){
-                    columnsExist  = true;
-                }
-            }
-            if(!tablesExist || !columnsExist){
-                //initialize tables .tbl and columns table after delelting existing ones
-                for (String tableName : listOfExistingFiles){
-                    File delFile =  new File(catalog_directory, tableName);
-                    delFile.delete();
-                }
-                initializeCatalogTables();
-            }
-            else{
-                //tables exist do nothing
-            }
+            initializeCatalogTables();
         }
 
-
     }
+
+
 
     /**
      * Initializes Maxwell tables table & columns table
@@ -99,25 +78,32 @@ public class Initialization {
                 ,new ArrayList<Boolean>(Arrays.asList(false,false,false,false,false,true))
                 ,false);
 
-        // insert into tables metadata
-        maxwellbase_tables.insert(new ArrayList<Object>(Arrays.asList("maxwellbase_tables")));
-        maxwellbase_tables.insert(new ArrayList<Object>(Arrays.asList("maxwellbase_columns")));
+        Table.tableTable = maxwellbase_tables;
+        Table.columnTable = maxwellbase_columns;
 
-        //insert into column metadata
-        maxwellbase_columns.insert(new ArrayList<Object>(Arrays.asList("maxwellbase_tables", "table_name",
-                "TEXT",1,"No","PRI")));
-        maxwellbase_columns.insert(new ArrayList<Object>(Arrays.asList("maxwellbase_columns","table_name",
-                "TEXT",1,"No",null)));
-        maxwellbase_columns.insert(new ArrayList<Object>(Arrays.asList("maxwellbase_columns","column_name",
-                "TEXT",2,"No",null)));
-        maxwellbase_columns.insert(new ArrayList<Object>(Arrays.asList("maxwellbase_columns","data_type",
-                "TEXT",3,"No",null)));
-        maxwellbase_columns.insert(new ArrayList<Object>(Arrays.asList("maxwellbase_columns","ordinal_position",
-                "TINYINT",4,"No",null)));
-        maxwellbase_columns.insert(new ArrayList<Object>(Arrays.asList("maxwellbase_columns","is_nullable",
-                "TEXT",5,"No",null)));
-        maxwellbase_columns.insert(new ArrayList<Object>(Arrays.asList("maxwellbase_columns","column_key",
-                "TEXT",6,"No",null)));
+        if (!tables_exists) {
+            // insert into tables metadata
+            maxwellbase_tables.insert(new ArrayList<Object>(Arrays.asList("maxwellbase_tables")));
+            maxwellbase_tables.insert(new ArrayList<Object>(Arrays.asList("maxwellbase_columns")));
+        }
+
+        if (!columns_exists) {
+            //insert into column metadata
+            maxwellbase_columns.insert(new ArrayList<Object>(Arrays.asList("maxwellbase_tables", "table_name",
+                    "TEXT", (byte) 1, "No", "PRI")));
+            maxwellbase_columns.insert(new ArrayList<Object>(Arrays.asList("maxwellbase_columns", "table_name",
+                    "TEXT", (byte) 1, "No", null)));
+            maxwellbase_columns.insert(new ArrayList<Object>(Arrays.asList("maxwellbase_columns", "column_name",
+                    "TEXT", (byte) 2, "No", null)));
+            maxwellbase_columns.insert(new ArrayList<Object>(Arrays.asList("maxwellbase_columns", "data_type",
+                    "TEXT", (byte) 3, "No", null)));
+            maxwellbase_columns.insert(new ArrayList<Object>(Arrays.asList("maxwellbase_columns", "ordinal_position",
+                    "TINYINT", (byte) 4, "No", null)));
+            maxwellbase_columns.insert(new ArrayList<Object>(Arrays.asList("maxwellbase_columns", "is_nullable",
+                    "TEXT", (byte) 5, "No", null)));
+            maxwellbase_columns.insert(new ArrayList<Object>(Arrays.asList("maxwellbase_columns", "column_key",
+                    "TEXT", (byte) 6, "No", null)));
+        }
     }
 
 }
