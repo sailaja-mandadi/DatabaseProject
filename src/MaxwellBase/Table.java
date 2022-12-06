@@ -61,13 +61,13 @@ public class Table {
     }
 
     public static boolean tableExists(String tableName) {
-        ArrayList<Record> tables = null;
+        ArrayList<Record> tables;
         try {
             tables = tableTable.search("table_name", tableName, "=");
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
-        return tables.size() != 0;
+        return !tables.isEmpty();
     }
 
     /**
@@ -156,7 +156,21 @@ public class Table {
      * Inserts the values into the table; This is where rowid generation is handled
      * @param values values to be inserted
      */
-    public void insert(ArrayList<Object> values) throws IOException {
+    public boolean insert(ArrayList<Object> values) throws IOException {
+        ArrayList<Record> primaryKeySearch = columnTable.search("column_key", "PRI", "=");
+        primaryKeySearch.addAll(columnTable.search("column_key", "UNI", "="));
+        if (primaryKeySearch.size() > 0) {
+            for (Record record : primaryKeySearch) {
+                if (record.getValues().get(0).equals(tableName)) {
+                    String columnName = (String) record.getValues().get(1);
+                    int columnIndex = columnNames.indexOf(columnName);
+                    ArrayList<Record> search = search(columnName, values.get(columnIndex), "=");
+                    if (search.size() > 0) {
+                        return false;
+                    }
+                }
+            }
+        }
         int nextRowId = tableFile.getLastRowId() + 1;
         ArrayList<Constants.DataTypes> types = new ArrayList<>(columnTypes);
 
@@ -174,6 +188,7 @@ public class Table {
                 getIndexFile(columnNames.get(i)).addItemToCell(values.get(i), nextRowId);
             }
         }
+        return true;
     }
 
     /**

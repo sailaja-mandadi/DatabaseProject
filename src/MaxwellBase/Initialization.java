@@ -107,25 +107,25 @@ public class Initialization {
 
         if (!tables_exists) {
             // insert into tables metadata
-            maxwellBaseTables.insert(new ArrayList<>(List.of("maxwellBaseTables")));
-            maxwellBaseTables.insert(new ArrayList<>(List.of("maxwellBaseColumns")));
+            maxwellBaseTables.insert(new ArrayList<>(List.of(Settings.maxwellBaseTables)));
+            maxwellBaseTables.insert(new ArrayList<>(List.of(Settings.maxwellBaseColumns)));
         }
 
         if (!columns_exists) {
             //insert into column metadata
-            maxwellBaseColumns.insert(new ArrayList<>(Arrays.asList("maxwellBaseTables", "table_name",
+            maxwellBaseColumns.insert(new ArrayList<>(Arrays.asList(Settings.maxwellBaseTables, "table_name",
                     "TEXT", (byte) 1, "No", "PRI")));
-            maxwellBaseColumns.insert(new ArrayList<>(Arrays.asList("maxwellBaseColumns", "table_name",
+            maxwellBaseColumns.insert(new ArrayList<>(Arrays.asList(Settings.maxwellBaseColumns, "table_name",
                     "TEXT", (byte) 1, "No", null)));
-            maxwellBaseColumns.insert(new ArrayList<>(Arrays.asList("maxwellBaseColumns", "column_name",
+            maxwellBaseColumns.insert(new ArrayList<>(Arrays.asList(Settings.maxwellBaseColumns, "column_name",
                     "TEXT", (byte) 2, "No", null)));
-            maxwellBaseColumns.insert(new ArrayList<>(Arrays.asList("maxwellBaseColumns", "data_type",
+            maxwellBaseColumns.insert(new ArrayList<>(Arrays.asList(Settings.maxwellBaseColumns, "data_type",
                     "TEXT", (byte) 3, "No", null)));
-            maxwellBaseColumns.insert(new ArrayList<>(Arrays.asList("maxwellBaseColumns", "ordinal_position",
+            maxwellBaseColumns.insert(new ArrayList<>(Arrays.asList(Settings.maxwellBaseColumns, "ordinal_position",
                  "TINYINT", (byte) 4, "No", null)));
-            maxwellBaseColumns.insert(new ArrayList<>(Arrays.asList("maxwellBaseColumns", "is_nullable",
+            maxwellBaseColumns.insert(new ArrayList<>(Arrays.asList(Settings.maxwellBaseColumns, "is_nullable",
                     "TEXT", (byte) 5, "No", null)));
-            maxwellBaseColumns.insert(new ArrayList<>(Arrays.asList("maxwellBaseColumns", "column_key",
+            maxwellBaseColumns.insert(new ArrayList<>(Arrays.asList(Settings.maxwellBaseColumns, "column_key",
                     "TEXT", (byte) 6, "No", null)));
         }
     }

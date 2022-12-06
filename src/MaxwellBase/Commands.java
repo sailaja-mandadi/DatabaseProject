@@ -129,7 +129,7 @@ public class Commands {
         }
 
         /*  Code to create a .tbl file to contain table data */
-        new Table(tableFileName, columnNames, columnTypes, isNull, true);
+        Table table = new Table(tableFileName, columnNames, columnTypes, isNull, true);
 
         /*  Code to insert an entry in the TABLES meta-data for this new table.
          *  i.e. New row in davisbase_tables if you're using that mechanism for meta-data.
@@ -142,7 +142,9 @@ public class Commands {
         for (int i = 0; i < columnTypes.size(); i++) {
             String isNullable;
             String columnKey;
-            if (primaryKey.get(i)) columnKey = "PRI";
+            if (primaryKey.get(i)){
+                columnKey = "PRI";
+            }
             else if (unique.get(i)) columnKey = "UNI";
             else columnKey = "NULL";
 
@@ -163,6 +165,9 @@ public class Commands {
                     )
                 )
             );
+        }
+        if (primaryKey.contains(true)) {
+            table.createIndex(columnNames.get(primaryKey.indexOf(true)));
         }
     }
 
@@ -353,7 +358,11 @@ public class Commands {
             } else
                 insertValues.add(null);
         }
-        table.insert(insertValues);
+        if (table.insert(insertValues)) {
+            out.println("1 row inserted successfully.");
+        } else {
+            out.println("Insertion failed.");
+        }
     }
 
     public static void parseDelete(ArrayList<String> commandTokens) throws IOException {
@@ -478,13 +487,6 @@ public class Commands {
             System.out.println(updated + " rows updated!");
         else
             System.out.println("update failed!");
-    }
-
-    public static String tokensToCommandString(ArrayList<String> commandTokens) {
-        StringBuilder commandString = new StringBuilder();
-        for (String token : commandTokens)
-            commandString.append(token).append(" ");
-        return commandString.toString();
     }
 
     public static ArrayList<String> commandStringToTokenList(String command) {

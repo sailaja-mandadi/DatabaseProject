@@ -8,13 +8,8 @@ public class Settings {
     static String userDataDirectory = "data/user_data";
     static String catalogDirectory = "data/catalog";
 
-    static String maxwellBaseTables = "maxwellBaseTables";
-    static String maxwellBaseColumns = "maxwellBaseColumns";
-    /*
-     * Page size for all files is 512 bytes by default.
-     * You may choose to make it user modifiable
-     */
-    static int pageSize = 512;
+    static String maxwellBaseTables = "maxwellbase_tables";
+    static String maxwellBaseColumns = "maxwellbase_columns";
 
     public static String getUserDataDirectory(){
         return userDataDirectory;
@@ -35,40 +30,13 @@ public class Settings {
         return prompt;
     }
 
-    public static void setPrompt(String s) {
-        prompt = s;
-    }
-
     public static String getVersion() {
         return version;
-    }
-
-    public static void setVersion(String version) {
-        Settings.version = version;
     }
 
     public static String getCopyright() {
         return copyright;
     }
-
-    public static void setCopyright(String copyright) {
-        Settings.copyright = copyright;
-    }
-
-    public static int getPageSize() {
-        return pageSize;
-    }
-
-    public static void setPageSize(int pageSize) {
-        Settings.pageSize = pageSize;
-    }
-
-
-
-
-    /*
-     *  Static method definitions
-     */
 
     /**
      * @param s The String to be repeated
@@ -76,10 +44,6 @@ public class Settings {
      * @return String A String object, which is the String s appended to itself num times.
      */
     public static String line(String s,int num) {
-        String a = "";
-        for(int i=0;i<num;i++) {
-            a += s;
-        }
-        return a;
+        return String.valueOf(s).repeat(Math.max(0, num));
     }
 }

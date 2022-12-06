@@ -566,6 +566,9 @@ public class IndexFile extends DatabaseFile{
         while (true) {
             Constants.PageType pageType = getPageType(currentPage);
             int index = findValuePosition(value, currentPage);
+            if (index == -1) {
+                return new int[]{currentPage, 0, 0};
+            }
             int offset = getCellOffset(currentPage, index);
             Object cellValue = readValue(currentPage, offset);
             if (DataFunctions.compareTo(dataType, value, cellValue) == 0) {
