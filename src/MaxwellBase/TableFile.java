@@ -35,6 +35,10 @@ public class TableFile extends DatabaseFile{
     public int getLastRowId() throws IOException {
         int lastPage = getLastLeafPage();
         int offset = getContentStart(lastPage);
+        int numberOfCells = getNumberOfCells(lastPage);
+        if (numberOfCells == 0){
+            return -1;
+        }
         Constants.PageType pageType = getPageType(lastPage);
         this.seek((long) lastPage * pageSize + offset);
         if (pageType == Constants.PageType.TABLE_LEAF) {
@@ -129,14 +133,9 @@ public class TableFile extends DatabaseFile{
         writeRecord(record, page);
     }
 
-    public int shiftCells(int page, int precedingCell, int shift, int newRecord) throws IOException {
-        // TODO: shift cells
-        // Should be similar or identical to shiftCells in IndexFile
-        return 0;
-    }
-
     public void updateRecord(int rowId, int columnIndex, Object newValue) throws IOException {
         // TODO: Implement
+        System.out.println("Not implemented");
     }
 
     public void deleteRecord(int rowId) throws IOException {

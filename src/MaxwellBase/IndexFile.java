@@ -143,63 +143,6 @@ public class IndexFile extends DatabaseFile{
     }
 
     /**
-     * Shifts all cells after precedingCell on page to the front of the page by shift bytes
-     * @param page The page to shift cells on
-     * @param precedingCell The cell to before the first cell to be shifted
-     * @param shift The number of bytes to shift the cells
-     * @param newRecord number of records to add or remove
-     *                  positive number to add records
-     *                  negative number to remove records
-     *                  zero to not change the number of records
-     * @return The page offset of the free space created
-     */
-    public int shiftCells(int page, int precedingCell, int shift, int newRecord) throws IOException {
-        if (shouldSplit(page, shift)) {
-            throw new IOException("Asked to shift cells more than the page can hold");
-        }
-
-        int oldContentStart = getContentStart(page);
-        int contentOffset = setContentStart(page, (short) shift);
-        if (contentOffset == pageSize) {
-            return pageSize - shift;
-        }
-        int startOffset;
-        if (precedingCell >= 0) {
-            startOffset = getCellOffset(page, precedingCell);
-        } else {
-            startOffset = pageSize;
-        }
-        this.seek((long) page * pageSize + oldContentStart);
-        int bytesToMove = startOffset - oldContentStart;
-        if (shift < 0) {
-            bytesToMove += shift;
-        }
-        byte[] shiftedBytes = new byte[bytesToMove];
-        this.read(shiftedBytes);
-
-        this.seek((long) page * pageSize + contentOffset);
-        this.write(shiftedBytes);
-
-        int numberOfCells = getNumberOfCells(page);
-        // Update the offsets of the cells that were shifted
-        this.seek((long) page * pageSize + 0x10 + (precedingCell + 1) * 2L);
-        byte[] oldOffsets = new byte[(numberOfCells - precedingCell - 1) * 2];
-        this.read(oldOffsets);
-
-        // Shift the offsets by shift bytes
-        // If we are adding a new record, leave room for it's offset
-        // If we are removing a record, remove it's offset
-        // If we are not changing the number of records, don't change the offsets
-        this.seek((long) page * pageSize + 0x10 + (precedingCell + 1 + newRecord) * 2L);
-
-        for (int i = 0; i < oldOffsets.length; i += 2) {
-            short oldOffset = (short) ((oldOffsets[i] << 8) | (oldOffsets[i + 1] & 0xFF));
-            this.writeShort(oldOffset - shift);
-        }
-        return startOffset - shift;
-    }
-
-    /**
      * Finds the index of the last cell on the page that has a value less than or equal to the given value
      * Used to search for cells, find insertion points, and find parent cells
      * @param value The value to compare against

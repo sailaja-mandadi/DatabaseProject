@@ -5,6 +5,7 @@ import Constants.Constants;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Map;
 
 public class Table {
@@ -14,6 +15,9 @@ public class Table {
     String tableName;
     TableFile tableFile;
     String path;
+
+    public static Table tableTable;
+    public static Table columnTable;
 
     /**
      * changed signature, to include if the table is a user table or not - to search in correct path
@@ -34,6 +38,25 @@ public class Table {
         loadTable(tableName);
 
     }
+
+    public void loadTable(String tableName) throws IOException {
+        ArrayList<Record> tables = tableTable.search("table_name", tableName, "=");
+        if (tables.size() == 0) {
+            return;
+        } if (tables.size() > 1) {
+            throw new RuntimeException("More than one table with the same name");
+        }
+        ArrayList<Record> columns = columnTable.search("table_name", tableName, "=");
+        columnNames = new ArrayList<>();
+        columnTypes = new ArrayList<>();
+        colIsNullable = new ArrayList<>();
+        for (Record column : columns) {
+            columnNames.add((String) column.getValues().get(1));
+            columnTypes.add(Constants.DataTypes.valueOf((String) column.getValues().get(2)));
+            colIsNullable.add(column.getValues().get(4) == "YES");
+        }
+    }
+
     public Table(String tableName, ArrayList<String> columnNames, ArrayList<Constants.DataTypes> columnTypes,
                  ArrayList<Boolean> colIsNullable, boolean userDataTable) {
         this.tableName = tableName;
@@ -89,8 +112,16 @@ public class Table {
     // Handle rowId generation in here
     public void insert(ArrayList<Object> values) throws IOException {
         int nextRowId = tableFile.getLastRowId() + 1;
+        ArrayList<Constants.DataTypes> types = new ArrayList<>(columnTypes);
+
         //handle rowid
-        Record rec = new Record(this.columnTypes, values, nextRowId);
+        for (int i = 0; i < columnNames.size(); i++) {
+            Object value = values.get(i);
+            if (value == null) {
+                types.set(i, Constants.DataTypes.NULL);
+            }
+        }
+        Record rec = new Record(types, values, nextRowId);
         tableFile.appendRecord(rec);
 
         // Update indexes
@@ -153,27 +184,35 @@ public class Table {
         } else {
             throw new RuntimeException("Column name cannot be null");
         }
+        int searchColumnIndex;
+        if (searchColumn != null) {
+            searchColumnIndex = columnNames.indexOf(searchColumn);
+        } else {
+            searchColumnIndex = -1;
+        }
+        ArrayList<Record> records;
         // Check if index exists for columnName
         if (indexExists(searchColumn)) {
             ArrayList<Integer> recordIds = getIndexFile(searchColumn).search(updateValue, operator);
+            records = new ArrayList<>();
             for (int recordId : recordIds) {
                 Record record = tableFile.getRecord(recordId);
-                tableFile.updateRecord(recordId, columnIndex, updateValue);
-                if (indexExists(updateColumn)) {
-                    IndexFile indexFile = getIndexFile(updateColumn);
-                    Object oldValue = record.getValues().get(columnIndex);
-                    indexFile.removeItemFromCell(oldValue, recordId);
-                    indexFile.addItemToCell(updateValue, recordId);
-                }
+                records.add(record);
             }
             return recordIds.size();
         }
         else {
-            return tableFile.updateRecords(columnIndex, updateValue, operator, searchColumn, searchValue);
+             records = tableFile.search(searchColumnIndex, searchValue, operator);
         }
-
-
-        return 0;
+        for (Record record : records) {
+            tableFile.updateRecord(record.getRowId(), columnIndex, updateValue);
+            if (indexExists(updateColumn)) {
+                IndexFile indexFile = getIndexFile(updateColumn);
+                indexFile.addItemToCell(updateValue, record.getRowId());
+                indexFile.removeItemFromCell(record.getValues().get(columnIndex), record.getRowId());
+            }
+        }
+        return records.size();
     }
 
     /**

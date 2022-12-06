@@ -50,6 +50,9 @@ public class DataFunctions {
     }
 
     public static int compareTo(Constants.DataTypes columnType, Object value1, Object value2) {
+        if (value1 == null || value2 == null) {
+            return 0;
+        }
         return switch (columnType) {
             case TINYINT, YEAR -> compareValues((byte) value1, (byte) value2);
             case SMALLINT -> compareValues((short) value1, (short) value2);

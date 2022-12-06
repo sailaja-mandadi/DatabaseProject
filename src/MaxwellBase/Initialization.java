@@ -65,16 +65,33 @@ public class Initialization {
      * Initializes Maxwell tables table & columns table
      */
     public static void initializeCatalogTables() throws IOException {
+        File maxwellbase_tables_file = new File(Settings.getCatalogDirectory() + "/maxwellbase_tables.tbl");
+        boolean tables_exists = maxwellbase_tables_file.exists();
+        File maxwellbase_columns_file = new File(Settings.getCatalogDirectory() + "/maxwellbase_columns.tbl");
+        boolean columns_exists = maxwellbase_columns_file.exists();
         // create meta data tables
         Table maxwellbase_tables = new Table("maxwellbase_tables",
                 new ArrayList<String>(Arrays.asList("table_name")),
                 new ArrayList<Constants.DataTypes>(Arrays.asList(Constants.DataTypes.TEXT)),
                 new ArrayList<Boolean>(Arrays.asList(false)),false );
-        Table maxwellbase_columns = new Table("maxwellbase_columns",
-                new ArrayList<String>(Arrays.asList("table_name","column_name","data_type","ordinal_position",
-                        "is_nullable","column_key")),
-                new ArrayList<Constants.DataTypes>(Arrays.asList(Constants.DataTypes.TEXT,Constants.DataTypes.TEXT,
-                Constants.DataTypes.TEXT,Constants.DataTypes.TINYINT,Constants.DataTypes.TEXT,Constants.DataTypes.TEXT))
+        Table maxwellbase_columns = new Table(
+                "maxwellbase_columns",
+                new ArrayList<String>(Arrays.asList(
+                        "table_name",
+                        "column_name",
+                        "data_type",
+                        "ordinal_position",
+                        "is_nullable",
+                        "column_key"
+                )),
+                new ArrayList<Constants.DataTypes>(Arrays.asList(
+                        Constants.DataTypes.TEXT,
+                        Constants.DataTypes.TEXT,
+                        Constants.DataTypes.TEXT,
+                        Constants.DataTypes.TINYINT,
+                        Constants.DataTypes.TEXT,
+                        Constants.DataTypes.TEXT
+                ))
                 ,new ArrayList<Boolean>(Arrays.asList(false,false,false,false,false,true))
                 ,false);
 
