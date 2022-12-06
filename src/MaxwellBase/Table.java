@@ -207,7 +207,8 @@ public class Table {
         }
         ArrayList<Record> records = search(searchColumn, searchValue, operator);
         for (Record record : records) {
-            tableFile.updateRecord(record.getRowId(), columnIndex, updateValue);
+            Object updateValueObj = DataFunctions.parseString(columnTypes.get(columnIndex), updateValue);
+            tableFile.updateRecord(record.getRowId(), columnIndex, updateValueObj);
             if (indexExists(updateColumn)) {
                 IndexFile indexFile = getIndexFile(updateColumn);
                 indexFile.addItemToCell(updateValue, record.getRowId());

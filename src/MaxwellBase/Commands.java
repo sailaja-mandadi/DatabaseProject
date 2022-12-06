@@ -266,7 +266,7 @@ public class Commands {
                 throw new RuntimeException(e);
             }
         }
-        else if(commandTokens.get(i).equalsIgnoreCase("where")){
+        else if(commandTokens.get(i).equalsIgnoreCase("where")) {
            // System.out.println("i,test:"+ i );
             i++;
             if (i+3 == queryLength || i+4 == queryLength) {
