@@ -83,7 +83,6 @@ public class Commands {
     }
 
     public static void parseCreateIndex(String command) throws IOException {
-        System.out.println("Stub: parseCreateIndex method");
         System.out.println("Command: " + command);
         ArrayList<String> commandTokens = commandStringToTokenList(command);
         if(commandTokens.size() <6 || !commandTokens.get(3).equals("(") || !commandTokens.get(5).equals(")")){
@@ -97,7 +96,6 @@ public class Commands {
     public static void parseCreateTable(String command) throws IOException {
         /* TODO: Before attempting to create new table file, check if the table already exists */
 
-        System.out.println("Stub: parseCreateTable method");
         System.out.println("Command: " + command);
         ArrayList<String> commandTokens = commandStringToTokenList(command);
         ArrayList<Record> result = new ArrayList<>();
@@ -190,9 +188,7 @@ public class Commands {
 
     public static void show(ArrayList<String> commandTokens) throws IOException {
         System.out.println("Command: " + tokensToCommandString(commandTokens));
-        //System.out.println("Stub: This is the show method");
         ArrayList<Record> result;
-       // System.out.println("Stub1: This is the show method");
         if (commandTokens.get(1).equalsIgnoreCase("tables")) {
             Table table = new Table("maxwellbase_tables",false);
             result = table.search(null,null,null);
@@ -202,15 +198,10 @@ public class Commands {
         else{
             System.out.println("Command is incorrect.\nType \"help;\" to display supported commands.");
         }
-        //System.out.println("Stub2: This is the show method");
     }
 
-    /**
-     *  Stub method for executing queries
-     */
     public static void parseQuery(ArrayList<String> commandTokens) throws IOException {
         // Where to be handled later
-        //System.out.println("Stub: This is the parseQuery method");
         System.out.println("Command: " + tokensToCommandString(commandTokens));
         boolean allColumns = false;
         String columnName;
@@ -246,6 +237,11 @@ public class Commands {
         }
 
         tableName = commandTokens.get(i).toLowerCase();
+        ArrayList<Record> exists = Table.tableTable.search("table_name",tableName,"=");
+        if(exists.size() == 0) {
+            System.out.println("Table does not exist!");
+            return;
+        }
         Table table  = null;
        try {
            if(tableName.equals("maxwellbase_columns") || tableName.equals("maxwellbase_tables"))
@@ -355,14 +351,10 @@ public class Commands {
 
     }
 
-    /*
-     *  Stub method for inserting a new record into a table.
-     */
 
     //public static ArrayList<String> condition(String a,Str)
     public static void parseInsert (ArrayList<String> commandTokens) throws IOException {
         out.println("Command: " + tokensToCommandString(commandTokens));
-        out.println("Stub: This is the insertRecord method");
         ArrayList<Constants.DataTypes> columnDatatype = new ArrayList<>();
 
         if (commandTokens.size() < 5){
@@ -493,7 +485,6 @@ public class Commands {
 
     public static void parseDelete(ArrayList<String> commandTokens) throws IOException {
         System.out.println("Command: " + tokensToCommandString(commandTokens));
-        System.out.println("Stub: This is the deleteRecord method");
 
         String columnName = new String();
         String value = new String();
@@ -501,7 +492,13 @@ public class Commands {
 
         if(commandTokens.get(0).equalsIgnoreCase("delete") && commandTokens.get(1).equalsIgnoreCase("from") )
         {
-            Table table = new Table(commandTokens.get(2).toLowerCase(),true);
+            String tableName = commandTokens.get(2).toLowerCase();
+            ArrayList<Record> result = Table.tableTable.search("table_name", tableName, "=");
+            if (result.size() == 0) {
+                out.println("Table " + tableName + " does not exist.");
+                return;
+            }
+            Table table = new Table(tableName,true);
             int querylength = commandTokens.size();
             if(querylength>3)
             {
@@ -620,14 +617,10 @@ public class Commands {
     }
 
 
-    /**
-     *  Stub method for dropping tables
-     */
     public static void dropTable(ArrayList<String> commandTokens) throws IOException {
         // removing record from catalogue
 
         System.out.println("Command: " + tokensToCommandString(commandTokens));
-        System.out.println("Stub: This is the dropTable method.");
         if(commandTokens.get(1).equalsIgnoreCase("table"))
         {
             Table table = new Table(commandTokens.get(2).toLowerCase(),true);
@@ -643,13 +636,8 @@ public class Commands {
 
 
 
-    /**
-     *  Stub method for updating records
-     *  updateString is a String of the user input
-     */
     public static void parseUpdate(ArrayList<String> commandTokens) throws IOException {
         System.out.println("Command: " + tokensToCommandString(commandTokens));
-        System.out.println("Stub: This is the parseUpdate method");
         String columnName = new String();
         String value = new String();
         String operator = new String();
@@ -661,6 +649,12 @@ public class Commands {
         }
         else
         {
+            String tableName = commandTokens.get(1).toLowerCase();
+            ArrayList<Record> result = Table.tableTable.search("table_name", tableName, "=");
+            if (result.size() == 0) {
+                out.println("Table " + tableName + " does not exist.");
+                return;
+            }
             Table table = new Table(commandTokens.get(1).toLowerCase(),true);
             updateCol = commandTokens.get(3);
             updateVal = commandTokens.get(5);

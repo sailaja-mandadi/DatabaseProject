@@ -16,20 +16,21 @@ public class QueryTest {
         var catDir = Settings.getCatalogDirectory();
         var userDir = Settings.getUserDataDirectory();
         // See if catalog directory exists and delete it if it does
-//        var catalogDir = new File(catDir);
-//        if (catalogDir.exists()) {
-//            if (!catalogDir.delete()) {
-//                throw new IOException("Could not delete catalog directory");
-//            }
-//        }
-        // See if user data directory exists and delete it if it does
-//        var userDataDir = new File(userDir);
-//        if (userDataDir.exists()) {
-//            if (!userDataDir.delete()) {
-//                throw new IOException("Could not delete user data directory");
-//            }
-//        }
-        Initialization.initializeCatalogDirectory();
+        var catalogDir = new File("data");
+        if (catalogDir.exists()) {
+            for (var file : catalogDir.listFiles()) {
+                for (var file2 : file.listFiles()) {
+                    file2.delete();
+                }
+                if (!file.delete()) {
+                    System.out.println("Why not?");
+                }
+            }
+            if(!catalogDir.delete()){
+                System.out.println("Why not?");
+            }
+        }
+        Initialization.initialize(new File("data"));
     }
 
     @Test
@@ -45,8 +46,6 @@ public class QueryTest {
     @Test
     public void testDeleteFromTable() throws IOException {
         Commands.parseUserCommand("CREATE TABLE test (col1 TEXT, col2 INT, col3 TEXT)");
-        Commands.parseUserCommand("INSERT INTO students VALUES (\"John\", 20, 3)");
-        Commands.parseUserCommand("INSERT INTO students VALUES (\"Jane\", 21, 4)");
-        Commands.parseUserCommand("DELETE FROM students WHERE gpa = 3");
+        Commands.parseUserCommand("DROP TABLE test");
     }
 }

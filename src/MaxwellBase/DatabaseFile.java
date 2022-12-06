@@ -121,6 +121,9 @@ public abstract class DatabaseFile extends RandomAccessFile {
         if (shouldSplit(page, shift)) {
             throw new IOException("Asked to shift cells more than the page can hold");
         }
+        if (precedingCell == getNumberOfCells(page) - 1) {
+            return setContentStart(page, (short) shift);
+        }
 
         int oldContentStart = getContentStart(page);
         int contentOffset = setContentStart(page, (short) shift);
