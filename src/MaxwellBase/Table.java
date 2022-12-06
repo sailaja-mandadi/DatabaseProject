@@ -21,18 +21,18 @@ public class Table {
 
     /**
      * changed signature, to include if the table is a user table or not - to search in correct path
+     *
      * @param tableName
      * @param userTable
      * @throws IOException
      */
-    public Table(String tableName,boolean userTable) throws IOException {
+    public Table(String tableName, boolean userTable) throws IOException {
         this.tableName = tableName;
-        if(userTable) {
-            this.tableFile = new TableFile(tableName ,Settings.getUserDataDirectory());
+        if (userTable) {
+            this.tableFile = new TableFile(tableName, Settings.getUserDataDirectory());
             this.path = Settings.getUserDataDirectory();
-        }
-        else {
-            this.tableFile = new TableFile(tableName ,Settings.getCatalogDirectory());
+        } else {
+            this.tableFile = new TableFile(tableName, Settings.getCatalogDirectory());
             this.path = Settings.getCatalogDirectory();
         }
         loadTable(tableName);
@@ -43,7 +43,8 @@ public class Table {
         ArrayList<Record> tables = tableTable.search("table_name", tableName, "=");
         if (tables.size() == 0) {
             return;
-        } if (tables.size() > 1) {
+        }
+        if (tables.size() > 1) {
             throw new RuntimeException("More than one table with the same name");
         }
         ArrayList<Record> columns = columnTable.search("table_name", tableName, "=");
@@ -63,10 +64,10 @@ public class Table {
         this.columnNames = columnNames;
         this.columnTypes = columnTypes;
         this.colIsNullable = colIsNullable;
-        if(userDataTable)
+        if (userDataTable)
             this.path = Settings.getUserDataDirectory();
         else
-           this.path = Settings.getCatalogDirectory();
+            this.path = Settings.getCatalogDirectory();
         try {
             tableFile = new TableFile(tableName, this.path);
         } catch (IOException e) {
@@ -74,7 +75,7 @@ public class Table {
         }
     }
 
-    public ArrayList<Record> search(String columnName, String value, String operator) throws IOException{
+    public ArrayList<Record> search(String columnName, String value, String operator) throws IOException {
         // Check if index exists for columnName
         // If it does, use index to search
         // If it doesn't, use tableFile to search
@@ -86,17 +87,19 @@ public class Table {
                 records.add(tableFile.getRecord(recordId));
             }
             return records;
-        }
-        else {
+        } else {
             int columnIndex;
-            if (columnName != null) {
+            if (columnName != null && !columnNames.contains(columnName)) {
                 columnIndex = columnNames.indexOf(columnName);
+            } else if (columnName != null) {
+                return new ArrayList<>();
             } else {
                 columnIndex = -1;
             }
             return tableFile.search(columnIndex, value, operator);
         }
     }
+
     public IndexFile getIndexFile(String columnName) throws IOException {
         File indexFile = new File(path + "/" + tableName + "." + columnName + ".ndx");
         if (indexFile.exists()) {
@@ -114,10 +117,8 @@ public class Table {
         int nextRowId = tableFile.getLastRowId() + 1;
         ArrayList<Constants.DataTypes> types = new ArrayList<>(columnTypes);
 
-        //handle rowid
         for (int i = 0; i < columnNames.size(); i++) {
-            Object value = values.get(i);
-            if (value == null) {
+            if (values.get(i) == null) {
                 types.set(i, Constants.DataTypes.NULL);
             }
         }
@@ -132,78 +133,43 @@ public class Table {
         }
     }
 
-    // TODO: Implement this
-
     /**
-     *
-     * @param columnName
-     * @param value
-     * @param operator
+     * @param columnName column used to search for records to delete
+     * @param value     value to search for
+     * @param operator operator to use in search
      * @return No of rows deleted
-     * @throws IOException
      */
-
-    public int delete(String columnName, String value, String operator) throws IOException{
-        // Check if index exists for columnName
-        if (indexExists(columnName)) {
-            IndexFile indexFile = getIndexFile(columnName);
-            ArrayList<Integer> recordIds = indexFile.search(value, operator);
-            for (int recordId : recordIds) {
-                tableFile.deleteRecord(recordId);
-                indexFile.removeItemFromCell(value, recordId);
+    public int delete(String columnName, String value, String operator) throws IOException {
+        ArrayList<Record> records = search(columnName, value, operator);
+        for (Record record : records) {
+            tableFile.deleteRecord(record.getRowId());
+            for (int i = 0; i < columnNames.size(); i++) {
+                if (indexExists(columnNames.get(i))) {
+                    getIndexFile(columnNames.get(i)).removeItemFromCell(record.getValues().get(i), record.getRowId());
+                }
             }
-            return recordIds.size();
         }
-        else {
-            int columnIndex;
-            if (columnName != null) {
-                columnIndex = columnNames.indexOf(columnName);
-            } else {
-                columnIndex = -1;
-            }
-            return tableFile.deleteRecords(columnIndex, value, operator);
-        }
+        return records.size();
     }
 
     /**
-     *
-     * @param searchColumn
-     * @param searchValue
-     * @param operator
-     * @param updateColumn
-     * @param updateValue
+     * @param searchColumn  Column to condition update on
+     * @param searchValue  Value to condition update on
+     * @param operator    Operator to condition update on
+     * @param updateColumn Column to update
+     * @param updateValue New value to write
      * @return no of rows updated
-     * @throws IOException
      */
-    public int update(String searchColumn, String searchValue, String operator, String updateColumn, String updateValue)
-            throws IOException{
+    public int update(String searchColumn, String searchValue, String operator,
+                      String updateColumn, String updateValue ) throws IOException {
 
         int columnIndex;
-        if (updateColumn != null) {
+        if (columnNames.contains(updateColumn)) {
             columnIndex = columnNames.indexOf(updateColumn);
         } else {
-            throw new RuntimeException("Column name cannot be null");
+            return 0;
         }
-        int searchColumnIndex;
-        if (searchColumn != null) {
-            searchColumnIndex = columnNames.indexOf(searchColumn);
-        } else {
-            searchColumnIndex = -1;
-        }
-        ArrayList<Record> records;
-        // Check if index exists for columnName
-        if (indexExists(searchColumn)) {
-            ArrayList<Integer> recordIds = getIndexFile(searchColumn).search(updateValue, operator);
-            records = new ArrayList<>();
-            for (int recordId : recordIds) {
-                Record record = tableFile.getRecord(recordId);
-                records.add(record);
-            }
-            return recordIds.size();
-        }
-        else {
-             records = tableFile.search(searchColumnIndex, searchValue, operator);
-        }
+        ArrayList<Record> records = search(searchColumn, searchValue, operator);
         for (Record record : records) {
             tableFile.updateRecord(record.getRowId(), columnIndex, updateValue);
             if (indexExists(updateColumn)) {
@@ -216,14 +182,13 @@ public class Table {
     }
 
     /**
-     *
      * @return
      */
     public boolean dropTable() {
-       // java file.delete
+        // java file.delete
         try {
-            tableTable.delete("table_name",this.tableName,"=");
-            columnTable.delete("table_name",this.tableName,"=");
+            tableTable.delete("table_name", this.tableName, "=");
+            columnTable.delete("table_name", this.tableName, "=");
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
@@ -248,7 +213,6 @@ public class Table {
             throw new RuntimeException(e);
         }
     }
-
 
 
 }

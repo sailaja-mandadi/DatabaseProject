@@ -410,7 +410,52 @@ public class IndexFile extends DatabaseFile{
         if (rowIds.size() != 0) {
             throw new IllegalArgumentException("Cannot delete cell with row ids");
         }
-        // TODO
+        // If the page is root and leaf remove the cell from the leaf
+        // If the page is an interior page
+            // A. If the page's left child has is more than half full steal the last cell it
+            // B. Otherwise if the page's right child has is more than half full steal the first cell it
+            // C. Otherwise merge the right child into the left child
+        // If
+    }
+
+    public void deleteFromNonLeaf(int page, int index) throws IOException {
+        int offset = getCellOffset(page, index);
+        this.seek((long) page * pageSize + offset);
+        int leftChildPage = this.readInt();
+        int leftChildSize = getContentStart(leftChildPage);
+        int leftChildCells = getNumberOfCells(leftChildPage);
+        int rightOffset = getCellOffset(page, index + 1);
+        this.seek((long) page * pageSize + rightOffset);
+        int rightChildPage = this.readInt();
+        int rightChildSize = getContentStart(rightChildPage);
+        int rightChildCells = getNumberOfCells(rightChildPage);
+
+        if (leftChildSize > (pageSize - 0xF) / 2 && rightChildCells > 1) {
+            // Get the last cell from the left child
+            int lastCellOffset = getCellOffset(leftChildPage, leftChildCells - 1);
+            Constants.PageType leftChildPageType = getPageType(leftChildPage);
+            this.seek((long) leftChildPage * pageSize + lastCellOffset);
+            byte[] cell;
+            if (leftChildPageType == Constants.PageType.INDEX_INTERIOR) {
+                int pointer = this.readInt();
+                int payloadSize = this.readShort();
+                cell = new byte[payloadSize + 6];
+            } else {
+                int payloadSize = this.readShort();
+                cell = new byte[payloadSize + 2];
+            }
+            this.seek((long) leftChildPage * pageSize + lastCellOffset);
+            this.read(cell);
+            deleteCell(leftChildPage, leftChildCells - 1);
+        } else if (rightChildSize > (pageSize - 0xF) / 2 && rightChildCells > 1) {
+            int firstCellOffset = getCellOffset(rightChildPage, 0);
+        } else {
+
+        }
+    }
+
+    public void deleteFromLeaf(int page, int index) throws IOException {
+
     }
 
     /**
