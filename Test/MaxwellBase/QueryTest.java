@@ -58,4 +58,11 @@ public class QueryTest {
         Commands.parseUserCommand("SELECT * FROM test");
         Commands.parseUserCommand("DROP TABLE test");
     }
+
+    @Test
+    public void testIndexSearch() throws IOException {
+        testInsert();
+        Commands.parseUserCommand("CREATE INDEX test_index ON test (col2)");
+        Commands.parseUserCommand("SELECT * FROM test WHERE col2 = 1");
+    }
 }
