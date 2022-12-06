@@ -182,7 +182,7 @@ public class TableFile extends DatabaseFile{
         this.seek((long) page * pageSize + offset);
         short payloadSize = this.readShort();
         this.shiftCells(page, index, -payloadSize - 6, -1);
-        if (index == 0) {
+        if (index == 0 && getParentPage(page) != 0xFFFFFFFF) {
             updatePagePointer(getParentPage(page), index, getMinRowId(page));
         }
     }
