@@ -890,8 +890,8 @@ public class Commands {
         }
 
 
-        int totalLength = (columnNum.size()-1)*3 + 4 ;
-        for(Integer i : colSize)
+       int totalLength = (columnNum.size()-1)*3 + 4 ;
+        for(Integer i : columnNum)
             totalLength +=colSize.get(i);
 
         //print a line
