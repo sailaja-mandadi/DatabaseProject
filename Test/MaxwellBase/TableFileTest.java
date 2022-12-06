@@ -169,5 +169,32 @@ public class TableFileTest {
         }
     }
 
+    @Test
+    public void shiftCells() {
+        appendRecord();
+        try {
+            int originalOffset = tableFile.getCellOffset(3, 1);
+            tableFile.shiftCells(3, 0, 50, 0);
+            assertEquals(originalOffset - 50, tableFile.getCellOffset(3, 1));
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    @Test
+    public void updateRecord() {
+        appendRecord();
+        try {
+            tableFile.updateRecord(9, 1, "TEST UPDATE RECORD ABC DEF GHI JKL MNO PQR STU VWX YZ");
+            Record updatedRecord = tableFile.getRecord(9);
+            assertEquals("TEST UPDATE RECORD ABC DEF GHI JKL MNO PQR STU VWX YZ", updatedRecord.getValues().get(1));
+            tableFile.updateRecord(1, 2, 9999);
+            updatedRecord = tableFile.getRecord(1);
+            assertEquals(9999, updatedRecord.getValues().get(2));
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
 
 }

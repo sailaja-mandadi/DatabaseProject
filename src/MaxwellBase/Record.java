@@ -22,24 +22,9 @@ public class Record {
             var value = values.get(i);
             if (value == null) {
                 column = Constants.DataTypes.NULL;
-            }
-            else if (column == Constants.DataTypes.TINYINT) {
-                recordSize += 1;
-            } else if (column == Constants.DataTypes.SMALLINT) {
-                recordSize += 2;
-            } else if (column == Constants.DataTypes.INT || column == Constants.DataTypes.FLOAT) {
-                recordSize += 4;
-            } else if (column == Constants.DataTypes.BIGINT
-                    || column == Constants.DataTypes.DOUBLE
-                    || column == Constants.DataTypes.DATETIME
-                    || column == Constants.DataTypes.DATE) {
-                recordSize += 8;
-            } else if (column == Constants.DataTypes.YEAR) {
-                recordSize += 1;
-            } else if (column == Constants.DataTypes.TIME) {
-                recordSize += 4;
-            } else if (column == Constants.DataTypes.TEXT) {
-                recordSize += ((String) value).length();
+            } else {
+                int size = DataFunctions.typeSize(column);
+                recordSize += size != -1 ? size : ((String) value).length();
             }
 
             if (column != Constants.DataTypes.TEXT) {

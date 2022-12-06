@@ -157,4 +157,15 @@ public class DataFunctions {
         return date;
     }
 
+    public static int typeSize(Constants.DataTypes type) {
+        return switch (type) {
+            case TINYINT, YEAR -> 1;
+            case SMALLINT -> 2;
+            case INT, TIME, FLOAT -> 4;
+            case BIGINT, DATETIME, DATE, DOUBLE -> 8;
+            case TEXT -> -1;
+            default -> 0;
+        };
+    }
+
 }

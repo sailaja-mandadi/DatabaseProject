@@ -116,26 +116,57 @@ public class TableFile extends DatabaseFile{
         byte[] header = record.getHeader();
         this.write(header); // write record
         for (int i = 0; i < columns.size(); i++){
-            switch (columns.get(i)) {
-                case TINYINT, YEAR -> this.writeByte((byte) values.get(i));
-                case SMALLINT -> this.writeShort((short) values.get(i));
-                case INT, TIME -> this.writeInt((int) values.get(i));
-                case BIGINT, DATE, DATETIME -> this.writeLong((long) values.get(i));
-                case FLOAT -> this.writeFloat((float) values.get(i));
-                case DOUBLE -> this.writeDouble((double) values.get(i));
-                case TEXT -> this.writeBytes((String) values.get(i));
-            }
+            writeData(columns.get(i), values.get(i));
         }
     }
 
+    public void writeData(Constants.DataTypes type, Object value) throws IOException {
+        switch (type) {
+            case TINYINT, YEAR -> this.writeByte((byte) value);
+            case SMALLINT -> this.writeShort((short) value);
+            case INT, TIME -> this.writeInt((int) value);
+            case BIGINT, DATE, DATETIME -> this.writeLong((long) value);
+            case FLOAT -> this.writeFloat((float) value);
+            case DOUBLE -> this.writeDouble((double) value);
+            case TEXT -> this.writeBytes((String) value);
+        }
+    }
     public void appendRecord(Record record) throws IOException {
         int page = getLastLeafPage();
         writeRecord(record, page);
     }
 
     public void updateRecord(int rowId, int columnIndex, Object newValue) throws IOException {
-        // TODO: Implement
-        System.out.println("Not implemented");
+        int[] pageAndIndex = findRecord(rowId);
+        int page = pageAndIndex[0];
+        int index = pageAndIndex[1];
+        int exists = pageAndIndex[2];
+        if (exists == 0) {
+            throw new IOException("Record does not exist");
+        }
+        int offset = getCellOffset(page, index);
+        Record record = readRecord(page, offset);
+        if (record.getColumns().get(columnIndex) == Constants.DataTypes.TEXT) {
+            int oldSize = ((String) record.getValues().get(columnIndex)).length();
+            int newSize = ((String) newValue).length();
+            if (shouldSplit(page, (short) (newSize - oldSize))) {
+                splitPage(page, rowId);
+                int[] newPageAndIndex = findRecord(rowId);
+                page = newPageAndIndex[0];
+                index = newPageAndIndex[1];
+            }
+            this.shiftCells(page, index -1, oldSize - newSize, 0);
+            offset = getCellOffset(page, index);
+        }
+        ArrayList<Object> values = record.getValues();
+        values.set(columnIndex, newValue);
+        Record newRecord = new Record(record.getColumns(), values, record.getRowId());
+        this.seek((long) page * pageSize + offset + 6);
+        byte[] header = newRecord.getHeader();
+        this.write(header);
+        for (int i = 0; i < newRecord.getColumns().size(); i++){
+            writeData(newRecord.getColumns().get(i), values.get(i));
+        }
     }
 
     public void deleteRecord(int rowId) throws IOException {
