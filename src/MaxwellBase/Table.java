@@ -36,9 +36,13 @@ public class Table {
             this.path = Settings.getCatalogDirectory();
         }
         loadTable(tableName);
-
     }
 
+    /**
+     * Loads the table by creating an entry in columns
+     * @param tableName
+     * @throws IOException
+     */
     public void loadTable(String tableName) throws IOException {
         ArrayList<Record> tables = tableTable.search("table_name", tableName, "=");
         if (tables.size() == 0) {
@@ -58,6 +62,14 @@ public class Table {
         }
     }
 
+    /**
+     * Constructor for Table
+     * @param tableName
+     * @param columnNames
+     * @param columnTypes
+     * @param colIsNullable
+     * @param userDataTable
+     */
     public Table(String tableName, ArrayList<String> columnNames, ArrayList<Constants.DataTypes> columnTypes,
                  ArrayList<Boolean> colIsNullable, boolean userDataTable) {
         this.tableName = tableName;
@@ -75,6 +87,14 @@ public class Table {
         }
     }
 
+    /**
+     * Search the table based on value and operator; use index for column if available
+     * @param columnName
+     * @param value
+     * @param operator
+     * @return a list of records, an empty list
+     * @throws IOException
+     */
     public ArrayList<Record> search(String columnName, String value, String operator) throws IOException {
         // Check if index exists for columnName
         // If it does, use index to search
@@ -89,17 +109,23 @@ public class Table {
             return records;
         } else {
             int columnIndex;
-            if (columnName != null && !columnNames.contains(columnName)) {
+            if (columnName != null && columnNames.contains(columnName)) {
                 columnIndex = columnNames.indexOf(columnName);
-            } else if (columnName != null) {
-                return new ArrayList<>();
-            } else {
+            } else if (columnName == null) {
                 columnIndex = -1;
+            } else {
+                return new ArrayList<>();
             }
             return tableFile.search(columnIndex, value, operator);
         }
     }
 
+    /**
+     * Gets the Index file if it exists
+     * @param columnName
+     * @return an index file, else null
+     * @throws IOException
+     */
     public IndexFile getIndexFile(String columnName) throws IOException {
         File indexFile = new File(path + "/" + tableName + "." + columnName + ".ndx");
         if (indexFile.exists()) {
@@ -108,11 +134,21 @@ public class Table {
         return null;
     }
 
+    /**
+     * Get ths type of column
+     * @param columnName
+     * @return "PRI", "UNI", or NULL
+     */
     public Constants.DataTypes getColumnType(String columnName) {
         return columnTypes.get(columnNames.indexOf(columnName));
     }
 
-    // Handle rowId generation in here
+
+    /**
+     * Inserts the values into the table; This is where rowid generation is handled
+     * @param values
+     * @throws IOException
+     */
     public void insert(ArrayList<Object> values) throws IOException {
         int nextRowId = tableFile.getLastRowId() + 1;
         ArrayList<Constants.DataTypes> types = new ArrayList<>(columnTypes);
@@ -182,6 +218,7 @@ public class Table {
     }
 
     /**
+     * Drops the table, and delete corresponding meta data and indexes.
      * @return
      */
     public boolean dropTable() {
@@ -196,11 +233,21 @@ public class Table {
         return tableFile.delete();
     }
 
+    /**
+     * Checks if the index file exists
+     * @param columnName
+     * @return True if exists, False is not exists.
+     */
     public boolean indexExists(String columnName) {
         File file = new File(path + "/" + tableName + "." + columnName + ".ndx");
         return file.exists();
     }
 
+
+    /**
+     * Creates an index file for the column
+     * @param columnName
+     */
     public void createIndex(String columnName) {
         try {
             IndexFile indexFile = getIndexFile(columnName);

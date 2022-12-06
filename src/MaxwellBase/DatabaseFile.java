@@ -18,6 +18,11 @@ public abstract class DatabaseFile extends RandomAccessFile {
     }
 
     public int createPage(int parentPage, Constants.PageType pageType) throws IOException {
+        for (int p = 0; p < this.length() / pageSize; p++){
+            if (getPageType(p) == Constants.PageType.EMPTY) {
+                lastPageIndex = p - 1;
+            }
+        }
         lastPageIndex++;
         this.setLength((long) (lastPageIndex + 1) * pageSize);
         this.seek((long) lastPageIndex * pageSize);
@@ -156,5 +161,11 @@ public abstract class DatabaseFile extends RandomAccessFile {
             this.writeShort(oldOffset - shift);
         }
         return startOffset - shift;
+    }
+
+    public void deletePage(int page) throws IOException {
+        this.seek((long) page * pageSize);
+        byte[] emptyPage = new byte[pageSize];
+        this.write(emptyPage);
     }
 }

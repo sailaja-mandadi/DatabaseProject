@@ -171,7 +171,33 @@ public class TableFile extends DatabaseFile{
 
     public void deleteRecord(int rowId) throws IOException {
         // TODO: Implement
+        int[] pageAndIndex = findRecord(rowId);
+        int page = pageAndIndex[0];
+        int index = pageAndIndex[1];
+        int exists = pageAndIndex[2];
+        if (exists == 0) {
+            throw new IOException("Record does not exist");
+        }
+        int offset = getCellOffset(page, index);
+        this.seek((long) page * pageSize + offset);
+        short payloadSize = this.readShort();
+        this.shiftCells(page, index, -payloadSize - 6, -1);
+        if (index == 0) {
+            updatePagePointer(getParentPage(page), index, getMinRowId(page));
+        }
+    }
 
+    public void updatePagePointer(int page, int index, int newRowId) throws IOException {
+        int offset = getCellOffset(page, index);
+        this.seek((long) page * pageSize + offset + 4);
+        int oldRowId = this.readInt();
+        this.seek((long) page * pageSize + offset + 4);
+        this.writeInt(newRowId);
+        if (index == 0) {
+            int parentPage = getParentPage(page);
+            int parentIndex = findRecordOnPage(parentPage, oldRowId);
+            updatePagePointer(parentPage, parentIndex, newRowId);
+        }
     }
 
     /**
@@ -212,29 +238,35 @@ public class TableFile extends DatabaseFile{
         return readRecord(page, offset);
     }
 
+    public int findRecordOnPage(int page, int rowId) throws IOException {
+        int numCells = getNumberOfCells(page);
+        int currentCell = numCells / 2; // mid
+        int low = 0; // L
+        int high = numCells - 1; // R
+        int currentRowId = getRowId(page, currentCell);
+        while (low < high) {
+            // binary search over cells
+            // 0x10 location of cells in the page where each cell location = 2 byte
+            if (currentRowId < rowId) {
+                low = currentCell; // may be inside the current cell so leave it
+            } else if ( currentRowId > rowId) {
+                high = currentCell - 1; // - 1 must be left of the current cell
+            } else {
+                break;
+            }
+            // currentCell = Math.ceil((double) (low + high) / 2);
+            currentCell = (low + high + 1) / 2;
+            currentRowId = getRowId(page, currentCell);
+        }
+        return currentCell;
+    }
+
     public int[] findRecord(int rowId) throws IOException{
         int currentPage = getRootPage();
         while (true) {
             Constants.PageType pageType = getPageType(currentPage);
-            int numCells = getNumberOfCells(currentPage);
-            int currentCell = numCells / 2; // mid
-            int low = 0; // L
-            int high = numCells - 1; // R
+            int currentCell = findRecordOnPage(currentPage, rowId);
             int currentRowId = getRowId(currentPage, currentCell);
-            while (low < high /*currentRowId != rowId*/) {
-                // binary search over cells
-                // 0x10 location of cells in the page where each cell location = 2 byte
-                if (currentRowId < rowId) {
-                    low = currentCell; // may be inside the current cell so leave it
-                } else if ( currentRowId > rowId) {
-                    high = currentCell - 1; // - 1 must be left of the current cell
-                } else {
-                    break;
-                }
-                // currentCell = Math.ceil((double) (low + high) / 2);
-                currentCell = (low + high + 1) / 2;
-                currentRowId = getRowId(currentPage, currentCell);
-            }
             if (pageType == Constants.PageType.TABLE_LEAF) {
                 if (currentRowId == rowId) {
                     return new int[] {currentPage, currentCell, 1};

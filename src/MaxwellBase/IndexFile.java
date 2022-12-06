@@ -180,7 +180,7 @@ public class IndexFile extends DatabaseFile{
     /**
      * Moves all cells after precedingCell on sourcePage to destinationPage
      * @param sourcePage The page to move cells from
-     * @param destinationPage The page to move cells to, Assumes that destinationPage is empty
+     * @param destinationPage The page to move cells to
      * @param precedingCell The cell before the first cell to be moved
      */
     public void moveCells(int sourcePage, int destinationPage, int precedingCell) throws IOException {
@@ -410,7 +410,7 @@ public class IndexFile extends DatabaseFile{
         if (rowIds.size() != 0) {
             throw new IllegalArgumentException("Cannot delete cell with row ids");
         }
-        // If the page is root and leaf remove the cell from the leaf
+        // If the page is leaf and has more than one cell remove the cell from the leaf
         // If the page is an interior page
             // A. If the page's left child has is more than half full steal the last cell it
             // B. Otherwise if the page's right child has is more than half full steal the first cell it
@@ -422,6 +422,7 @@ public class IndexFile extends DatabaseFile{
         int offset = getCellOffset(page, index);
         this.seek((long) page * pageSize + offset);
         int leftChildPage = this.readInt();
+        int thisPayloadSize = this.readShort();
         int leftChildSize = getContentStart(leftChildPage);
         int leftChildCells = getNumberOfCells(leftChildPage);
         int rightOffset = getCellOffset(page, index + 1);
@@ -430,31 +431,56 @@ public class IndexFile extends DatabaseFile{
         int rightChildSize = getContentStart(rightChildPage);
         int rightChildCells = getNumberOfCells(rightChildPage);
 
-        if (leftChildSize > (pageSize - 0xF) / 2 && rightChildCells > 1) {
-            // Get the last cell from the left child
-            int lastCellOffset = getCellOffset(leftChildPage, leftChildCells - 1);
-            Constants.PageType leftChildPageType = getPageType(leftChildPage);
-            this.seek((long) leftChildPage * pageSize + lastCellOffset);
-            byte[] cell;
-            if (leftChildPageType == Constants.PageType.INDEX_INTERIOR) {
-                int pointer = this.readInt();
-                int payloadSize = this.readShort();
-                cell = new byte[payloadSize + 6];
-            } else {
-                int payloadSize = this.readShort();
-                cell = new byte[payloadSize + 2];
-            }
-            this.seek((long) leftChildPage * pageSize + lastCellOffset);
-            this.read(cell);
-            deleteCell(leftChildPage, leftChildCells - 1);
-        } else if (rightChildSize > (pageSize - 0xF) / 2 && rightChildCells > 1) {
-            int firstCellOffset = getCellOffset(rightChildPage, 0);
+        int payloadSize;
+        int replacementPage;
+        int replacementIndex;
+        byte[] cell;
+        if (leftChildSize > (pageSize - 0xF + leftChildCells * 2) / 2 && leftChildCells > 1) {
+            replacementPage = leftChildPage;
+            replacementIndex = leftChildCells - 1;
+        } else if (rightChildSize > (pageSize - 0xF + rightChildCells * 2) / 2 && rightChildCells > 1) {
+            replacementPage = rightChildPage;
+            replacementIndex = 0;
         } else {
-
+            // Merge the right child into the left child
+            // take the middle cell
+            // move all cells from right child to left child
+            moveCells(rightChildPage, leftChildPage, -1);
+            deletePage(rightChildPage);
+            this.seek((long) page * pageSize + rightOffset);
+            this.writeInt(leftChildPage);
+            this.shiftCells(page, leftChildPage, -4 - thisPayloadSize, 0);
+            return;
         }
+        deleteCell(replacementPage, replacementIndex);
+        int replacementOffset = getCellOffset(replacementPage, replacementIndex);
+        Constants.PageType replacementPageType = getPageType(replacementPage);
+        this.seek((long) leftChildPage * pageSize + replacementOffset);
+        if (replacementPageType == Constants.PageType.INDEX_INTERIOR) {
+            this.skipBytes(4);
+        }
+        payloadSize = this.readShort();
+        cell = new byte[payloadSize];
+        this.read(cell);
+        this.seek((long) page * pageSize + replacementOffset + 4);
+        this.writeInt(payloadSize);
+        if (thisPayloadSize != payloadSize) {
+            this.shiftCells(page, index, payloadSize - thisPayloadSize, 0);
+        }
+        this.write(cell);
     }
 
     public void deleteFromLeaf(int page, int index) throws IOException {
+        if (getContentStart(page) > (pageSize - 0xF + getNumberOfCells(page) * 2) / 2) {
+            int offset = getCellOffset(page, index);
+            this.seek((long) page * pageSize + offset);
+            int payloadSize = this.readShort();
+            this.shiftCells(page, index, -payloadSize - 4, 0);
+            if (getNumberOfCells(page) == 0) {
+                deletePage(page);
+            }
+        } else {
+        }
 
     }
 

@@ -196,5 +196,19 @@ public class TableFileTest {
         }
     }
 
+    @Test
+    public void deleteRecord() {
+        appendRecord();
+        try {
+            tableFile.deleteRecord(2);
+            Record deletedRecord = tableFile.getRecord(2);
+            assertNull(deletedRecord);
+            var searchResult = tableFile.search(2, "9800", "=");
+            assertEquals(0, searchResult.size());
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
 
 }
