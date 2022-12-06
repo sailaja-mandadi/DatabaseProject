@@ -39,15 +39,12 @@ public class Commands {
          */
         switch (commandTokens.get(0).toLowerCase()) {
             case "show" -> {
-                System.out.println("Case: SHOW");
                 show(commandTokens);
             }
             case "select" -> {
-                System.out.println("Case: SELECT");
                 parseQuery(commandTokens);
             }
             case "create" -> {
-                System.out.println("Case: CREATE");
                 if (commandTokens.get(1).equalsIgnoreCase("index")) {
                     parseCreateIndex(userCommand);
                 } else {
@@ -55,19 +52,15 @@ public class Commands {
                 }
             }
             case "insert" -> {
-                System.out.println("Case: INSERT");
                 parseInsert(commandTokens);
             }
             case "delete" -> {
-                System.out.println("Case: DELETE");
                 parseDelete(commandTokens);
             }
             case "update" -> {
-                System.out.println("Case: UPDATE");
                 parseUpdate(commandTokens);
             }
             case "drop" -> {
-                System.out.println("Case: DROP");
                 dropTable(commandTokens);
             }
             case "help" -> help();
