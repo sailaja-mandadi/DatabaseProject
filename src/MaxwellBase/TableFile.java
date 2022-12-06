@@ -170,7 +170,6 @@ public class TableFile extends DatabaseFile{
     }
 
     public void deleteRecord(int rowId) throws IOException {
-        // TODO: Implement
         int[] pageAndIndex = findRecord(rowId);
         int page = pageAndIndex[0];
         int index = pageAndIndex[1];
@@ -209,18 +208,6 @@ public class TableFile extends DatabaseFile{
             int parentIndex = findRecordOnPage(parentPage, oldRowId);
             updatePagePointer(parentPage, parentIndex, newRowId);
         }
-    }
-
-    /**
-     * Delete all records that match the given value
-     * @param columnIndex the column to search
-     * @param value the value to search for
-     * @param operator the operator to use
-     * @return the number of records deleted
-     */
-    public int deleteRecords(int columnIndex, String value, String operator) throws IOException {
-        // TODO: Implement
-        return 0;
     }
 
     public int getLastLeafPage() throws IOException {
@@ -356,7 +343,7 @@ public class TableFile extends DatabaseFile{
      * @param operator type of comparison
      * @return List of records that match the condition
      */
-    public ArrayList<Record> search(int columnIndex, String value, String operator) throws IOException {
+    public ArrayList<Record> search(int columnIndex, Object value, String operator) throws IOException {
         ArrayList<Record> records = new ArrayList<>();
 
         int currentPage = getRootPage();

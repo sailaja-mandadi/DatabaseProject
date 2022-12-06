@@ -6,21 +6,17 @@ import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 
 public class Initialization {
 
-//    public static boolean isIntialized = false;
-    public static String maxwellTables = "maxwellTablesTable";
-    public static String maxwellColumns = "maxwellColumnsTable";
 
 
     public static void initialize(File dataDirectory) throws IOException {
         try{
-//            Create data directory
             if (dataDirectory.mkdir()){
                 initializeDataDirectory();
             }
-
         }catch (SecurityException e) {
             System.out.println("Unable to create data container directory");
         }
@@ -30,21 +26,28 @@ public class Initialization {
             File catalogDirectory = new File(Settings.getCatalogDirectory());
             File UserDataDirectory = new File(Settings.getUserDataDirectory());
             if (!catalogDirectory.exists()){
-                catalogDirectory.mkdir();
+                if (!catalogDirectory.mkdir()){
+                    System.out.println("Unable to create catalog directory");
+                }
             }
             if (!UserDataDirectory.exists()){
-                UserDataDirectory.mkdir();
+                if (!UserDataDirectory.mkdir()){
+                    System.out.println("Unable to create user data directory");
+                }
             }
 
             String[] listOfExistingFiles = catalogDirectory.list();
+            assert listOfExistingFiles != null;
             for (String tableName : listOfExistingFiles){
                 File delFile =  new File(catalogDirectory, tableName);
-                delFile.delete();
+                if (!delFile.delete()){
+                    System.out.println("Unable to delete file");
+                }
             }
 
 
         }catch (SecurityException e){
-
+            System.out.println("Unable to create data directory");
         }
         // create new maxwellbase_tables and maxwellbase_columns tables
         initializeCatalogTables();
@@ -65,60 +68,64 @@ public class Initialization {
      * Initializes Maxwell tables table & columns table
      */
     public static void initializeCatalogTables() throws IOException {
-        File maxwellbase_tables_file = new File(Settings.getCatalogDirectory() + "/maxwellbase_tables.tbl");
+        File maxwellbase_tables_file = new File(Settings.getCatalogDirectory() + "/" + Settings.maxwellBaseTables + ".tbl");
         boolean tables_exists = maxwellbase_tables_file.exists();
-        File maxwellbase_columns_file = new File(Settings.getCatalogDirectory() + "/maxwellbase_columns.tbl");
+        File maxwellbase_columns_file = new File(Settings.getCatalogDirectory() + "/" + Settings.maxwellBaseColumns + ".tbl");
         boolean columns_exists = maxwellbase_columns_file.exists();
         // create meta data tables
-        Table maxwellbase_tables = new Table("maxwellbase_tables",
-                new ArrayList<String>(Arrays.asList("table_name")),
-                new ArrayList<Constants.DataTypes>(Arrays.asList(Constants.DataTypes.TEXT)),
-                new ArrayList<Boolean>(Arrays.asList(false)),false );
-        Table maxwellbase_columns = new Table(
-                "maxwellbase_columns",
-                new ArrayList<String>(Arrays.asList(
+        Table maxwellBaseTables = new Table(
+                Settings.maxwellBaseTables, // table name
+                new ArrayList<>(List.of("table_name")), // column names
+                new ArrayList<>(List.of(Constants.DataTypes.TEXT)), // column types
+                new ArrayList<>(List.of(false)), // column nullable
+                false // user table
+        );
+        Table maxwellBaseColumns = new Table(
+                Settings.maxwellBaseColumns, // table name
+                new ArrayList<>(Arrays.asList(
                         "table_name",
                         "column_name",
                         "data_type",
                         "ordinal_position",
                         "is_nullable",
                         "column_key"
-                )),
-                new ArrayList<Constants.DataTypes>(Arrays.asList(
+                )), // column names
+                new ArrayList<>(Arrays.asList(
                         Constants.DataTypes.TEXT,
                         Constants.DataTypes.TEXT,
                         Constants.DataTypes.TEXT,
                         Constants.DataTypes.TINYINT,
                         Constants.DataTypes.TEXT,
                         Constants.DataTypes.TEXT
-                ))
-                ,new ArrayList<Boolean>(Arrays.asList(false,false,false,false,false,true))
-                ,false);
+                )), // column types
+                new ArrayList<>(Arrays.asList(false,false,false,false,false,true)), // column nullable
+                false // user table
+        );
 
-        Table.tableTable = maxwellbase_tables;
-        Table.columnTable = maxwellbase_columns;
+        Table.tableTable = maxwellBaseTables;
+        Table.columnTable = maxwellBaseColumns;
 
         if (!tables_exists) {
             // insert into tables metadata
-            maxwellbase_tables.insert(new ArrayList<Object>(Arrays.asList("maxwellbase_tables")));
-            maxwellbase_tables.insert(new ArrayList<Object>(Arrays.asList("maxwellbase_columns")));
+            maxwellBaseTables.insert(new ArrayList<>(List.of("maxwellBaseTables")));
+            maxwellBaseTables.insert(new ArrayList<>(List.of("maxwellBaseColumns")));
         }
 
         if (!columns_exists) {
             //insert into column metadata
-            maxwellbase_columns.insert(new ArrayList<Object>(Arrays.asList("maxwellbase_tables", "table_name",
+            maxwellBaseColumns.insert(new ArrayList<>(Arrays.asList("maxwellBaseTables", "table_name",
                     "TEXT", (byte) 1, "No", "PRI")));
-            maxwellbase_columns.insert(new ArrayList<Object>(Arrays.asList("maxwellbase_columns", "table_name",
+            maxwellBaseColumns.insert(new ArrayList<>(Arrays.asList("maxwellBaseColumns", "table_name",
                     "TEXT", (byte) 1, "No", null)));
-            maxwellbase_columns.insert(new ArrayList<Object>(Arrays.asList("maxwellbase_columns", "column_name",
+            maxwellBaseColumns.insert(new ArrayList<>(Arrays.asList("maxwellBaseColumns", "column_name",
                     "TEXT", (byte) 2, "No", null)));
-            maxwellbase_columns.insert(new ArrayList<Object>(Arrays.asList("maxwellbase_columns", "data_type",
+            maxwellBaseColumns.insert(new ArrayList<>(Arrays.asList("maxwellBaseColumns", "data_type",
                     "TEXT", (byte) 3, "No", null)));
-            maxwellbase_columns.insert(new ArrayList<Object>(Arrays.asList("maxwellbase_columns", "ordinal_position",
-                    "TINYINT", (byte) 4, "No", null)));
-            maxwellbase_columns.insert(new ArrayList<Object>(Arrays.asList("maxwellbase_columns", "is_nullable",
+            maxwellBaseColumns.insert(new ArrayList<>(Arrays.asList("maxwellBaseColumns", "ordinal_position",
+                 "TINYINT", (byte) 4, "No", null)));
+            maxwellBaseColumns.insert(new ArrayList<>(Arrays.asList("maxwellBaseColumns", "is_nullable",
                     "TEXT", (byte) 5, "No", null)));
-            maxwellbase_columns.insert(new ArrayList<Object>(Arrays.asList("maxwellbase_columns", "column_key",
+            maxwellBaseColumns.insert(new ArrayList<>(Arrays.asList("maxwellBaseColumns", "column_key",
                     "TEXT", (byte) 6, "No", null)));
         }
     }

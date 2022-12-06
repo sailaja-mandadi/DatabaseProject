@@ -21,7 +21,7 @@ public class MaxwellBase {
      *  The Scanner class is used to collect user commands from the prompt
      *  There are many ways to do this. This is just one.
      *
-     *  Each time the semicolon (;) delimiter is entered, the userCommand
+     *  Each time the semicolon ; delimiter is entered, the userCommand
      *  String is re-populated.
      */
     static Scanner scanner = new Scanner(System.in).useDelimiter(";");
@@ -47,7 +47,7 @@ public class MaxwellBase {
         Utils.splashScreen();
 
         /* Variable to hold user input from the prompt */
-        String userCommand = "";
+        String userCommand;
 
         while(!Settings.isExit()) {
             System.out.print(Settings.getPrompt());

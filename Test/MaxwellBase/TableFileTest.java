@@ -153,13 +153,14 @@ public class TableFileTest {
     public void search() {
         appendRecord();
         ArrayList<Record> result = new ArrayList<>();
+        int searchValue = 8000;
         for (Record record : records) {
-            if ((int) record.getValues().get(2) > 8000) {
+            if ((int) record.getValues().get(2) > searchValue) {
                 result.add(record);
             }
         }
         try {
-            ArrayList<Record> searchResult = tableFile.search(2, "8000", ">");
+            ArrayList<Record> searchResult = tableFile.search(2, searchValue, ">");
             assertEquals(result, searchResult);
             for (int i = 0; i < result.size(); i++) {
                 assertEquals(result.get(i), searchResult.get(i));
@@ -203,12 +204,10 @@ public class TableFileTest {
             tableFile.deleteRecord(2);
             Record deletedRecord = tableFile.getRecord(2);
             assertNull(deletedRecord);
-            var searchResult = tableFile.search(2, "9800", "=");
+            var searchResult = tableFile.search(2, 9800, "=");
             assertEquals(0, searchResult.size());
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
     }
-
-
 }

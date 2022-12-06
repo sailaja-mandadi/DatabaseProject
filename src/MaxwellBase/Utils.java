@@ -15,11 +15,7 @@ public class Utils {
     }
 
     public static String printSeparator(String s, int len) {
-        String bar = "";
-        for(int i = 0; i < len; i++) {
-            bar += s;
-        }
-        return bar;
+        return String.valueOf(s).repeat(Math.max(0, len));
     }
 
 }

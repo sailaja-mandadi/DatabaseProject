@@ -5,22 +5,18 @@ import org.junit.Test;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.ArrayList;
-
-import static org.junit.jupiter.api.Assertions.*;
-
+import java.util.Objects;
 
 public class QueryTest {
     @Before
     public void setUp() throws IOException {
-        var catDir = Settings.getCatalogDirectory();
-        var userDir = Settings.getUserDataDirectory();
-        // See if catalog directory exists and delete it if it does
         var catalogDir = new File("data");
         if (catalogDir.exists()) {
-            for (var file : catalogDir.listFiles()) {
-                for (var file2 : file.listFiles()) {
-                    file2.delete();
+            for (var file : Objects.requireNonNull(catalogDir.listFiles())) {
+                for (var file2 : Objects.requireNonNull(file.listFiles())) {
+                    if (!file2.delete()) {
+                        System.out.println("Why not?");
+                    }
                 }
                 if (!file.delete()) {
                     System.out.println("Why not?");
@@ -40,7 +36,7 @@ public class QueryTest {
 
     @Test
     public void testCreateTable() throws IOException {
-        Commands.parseUserCommand("CREATE TABLE test (col1 TEXT, col2 INT, col3 TEXT)");
+        Commands.parseUserCommand("CREATE TABLE test (col1 TEXT,col2 INT,col3 TEXT)");
     }
 
     @Test
@@ -54,6 +50,7 @@ public class QueryTest {
     @Test
     public void testDeleteFromTable() throws IOException {
         testInsert();
+        Commands.parseUserCommand("SELECT * FROM test");
         Commands.parseUserCommand("DELETE FROM test WHERE col2 = 1");
         Commands.parseUserCommand("SELECT * FROM test");
         Commands.parseUserCommand("DROP TABLE test");

@@ -4,8 +4,6 @@ import Constants.Constants;
 import java.util.Date;
 import java.util.Calendar;
 
-import static java.time.temporal.ChronoUnit.DAYS;
-
 public class DataFunctions {
 
     /**
@@ -16,15 +14,34 @@ public class DataFunctions {
      */
     public static Object parseString(Constants.DataTypes dataType, String s) {
         return switch (dataType) {
-            case TINYINT, YEAR -> Byte.parseByte(s);
+            case TINYINT -> Byte.parseByte(s);
             case SMALLINT -> Short.parseShort(s);
-            case INT, TIME -> Integer.parseInt(s);
-            case BIGINT, DATETIME, DATE -> Long.parseLong(s);
+            case INT -> Integer.parseInt(s);
+            case BIGINT -> Long.parseLong(s);
             case FLOAT -> Float.parseFloat(s);
             case DOUBLE -> Double.parseDouble(s);
+            case YEAR -> Byte.parseByte(toDbYear(s));
+            case TIME -> Integer.parseInt(toDbTime(s));
+            case DATETIME -> Long.parseLong(toDbDateTime(s));
+            case DATE -> Long.parseLong(toDbDateTime(s + "_00:00:00"));
             case TEXT -> s;
             default -> null;
         };
+    }
+
+    public static String valueToString(Constants.DataTypes dataType, Object value) {
+        if (value == null) {
+            return "NULL";
+        }
+        String s = switch (dataType) {
+            case YEAR -> toDbYear(Byte.toString((Byte) value));
+            case TIME -> toDbTime(Integer.toString((Integer) value));
+            case DATETIME -> toDbDateTime(Long.toString((Long) value));
+            case DATE -> toDbDateTime(Long.toString((Long) value)).substring(0, 10);
+            case NULL -> "NULL";
+            default -> value.toString();
+        };
+        return s.trim();
     }
 
     public static boolean compare(Constants.DataTypes columnType, Object value1, Object value2, String operator) {
@@ -42,11 +59,6 @@ public class DataFunctions {
             case "<>" -> comparison != 0;
             default -> false;
         };
-    }
-
-    public static boolean compare(Constants.DataTypes columnType, Object value1, String strValue2, String operator) {
-        Object value2 = parseString(columnType, strValue2);
-        return compare(columnType, value1, value2, operator);
     }
 
     public static int compareTo(Constants.DataTypes columnType, Object value1, Object value2) {
@@ -116,10 +128,10 @@ public class DataFunctions {
     public static String fromDbTime(int millis) {
         int hrs = millis / 3600000;
         millis = millis%3600000;
-        int mins = millis/60000;
+        int minutes = millis/60000;
         millis = millis%60000;
         int secs = millis/1000;
-        return String.format("%02d",hrs) + ":"+String.format("%02d",mins)
+        return String.format("%02d",hrs) + ":"+String.format("%02d",minutes)
                 + ":"+String.format("%02d",secs);
     }
 
@@ -153,8 +165,7 @@ public class DataFunctions {
      * @return date string - YYYY-MM-DD_hh:mm:ss
      */
     public static String fromDbDateTime(long millis ) {
-        String date = new java.text.SimpleDateFormat("yyyy-MM-dd_HH:mm:ss").format(new java.util.Date (millis));
-        return date;
+        return new java.text.SimpleDateFormat("yyyy-MM-dd_HH:mm:ss").format(new Date (millis));
     }
 
     public static int typeSize(Constants.DataTypes type) {

@@ -116,7 +116,7 @@ public class HexDump {
                 if(thisByteOffset % 16 == 0) {
                     /* Print the row prefix address block in hex */
                     // out.print(String.format("0x%08x  ", thisByteOffset));
-                    out.print(String.format("%08x  ", thisByteOffset));
+                    out.printf("%08x  ", thisByteOffset);
                     currentByteColumn = 0;
                 }
 
@@ -184,7 +184,7 @@ public class HexDump {
         for(int n = 0; n < rowLength; n++) {
             if(n==8)
                 out.print(columnGap);
-            out.print(String.format("%02X ", row[n]));
+            out.printf("%02X ", row[n]);
         }
 
         if(displayASCII) {

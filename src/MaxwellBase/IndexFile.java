@@ -416,6 +416,18 @@ public class IndexFile extends DatabaseFile{
             // B. Otherwise if the page's right child has is more than half full steal the first cell it
             // C. Otherwise merge the right child into the left child
         // If
+
+        //Doest not work so skip for now
+        if (page > 0) {
+            return;
+        }
+
+        Constants.PageType pageType = getPageType(page);
+        if (pageType == Constants.PageType.INDEX_LEAF) {
+            deleteFromLeaf(page, index);
+        } else {
+            deleteFromNonLeaf(page, index);
+        }
     }
 
     public void deleteFromNonLeaf(int page, int index) throws IOException {
@@ -479,7 +491,6 @@ public class IndexFile extends DatabaseFile{
             if (getNumberOfCells(page) == 0) {
                 deletePage(page);
             }
-        } else {
         }
 
     }
@@ -630,7 +641,7 @@ public class IndexFile extends DatabaseFile{
         return rowIds;
     }
 
-    public ArrayList<Integer> search(String value, String operator) throws IOException {
+    public ArrayList<Integer> search(Object value, String operator) throws IOException {
         ArrayList<Integer> rowIds;
         int[] pageAndIndex = findValue(value);
 

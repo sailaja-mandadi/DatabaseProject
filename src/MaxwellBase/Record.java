@@ -5,10 +5,10 @@ import java.util.ArrayList;
 import Constants.Constants;
 public class Record {
     private short recordSize;
-    private ArrayList<Constants.DataTypes> columns;
-    private ArrayList<Object> values;
-    private int rowId;
-    private byte[] header;
+    private final ArrayList<Constants.DataTypes> columns;
+    private final ArrayList<Object> values;
+    private final int rowId;
+    private final byte[] header;
 
     public Record(ArrayList<Constants.DataTypes> columns, ArrayList<Object> values, int rowId) {
         this.columns = columns;
@@ -64,7 +64,7 @@ public class Record {
         return sb.toString();
     }
 
-    public boolean compare(int columnIndex, String value, String operator) {
+    public boolean compare(int columnIndex, Object value, String operator) {
         if (columnIndex == -1 && value == null && operator == null) {
             return true;
         }
@@ -77,10 +77,9 @@ public class Record {
     }
 
     public boolean equals(Object other) {
-        if (!(other instanceof Record)) {
+        if (!(other instanceof Record otherRecord)) {
             return false;
         }
-        Record otherRecord = (Record) other;
         if (this.columns.size() != otherRecord.columns.size()) {
             return false;
         }

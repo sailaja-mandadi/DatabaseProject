@@ -7,6 +7,9 @@ public class Settings {
     static boolean isExit = false;
     static String userDataDirectory = "data/user_data";
     static String catalogDirectory = "data/catalog";
+
+    static String maxwellBaseTables = "maxwellBaseTables";
+    static String maxwellBaseColumns = "maxwellBaseColumns";
     /*
      * Page size for all files is 512 bytes by default.
      * You may choose to make it user modifiable
@@ -63,7 +66,7 @@ public class Settings {
 
 
 
-    /** ***********************************************************************
+    /*
      *  Static method definitions
      */
 

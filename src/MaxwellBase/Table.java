@@ -5,8 +5,6 @@ import Constants.Constants;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Map;
 
 public class Table {
     ArrayList<String> columnNames;
@@ -22,9 +20,8 @@ public class Table {
     /**
      * changed signature, to include if the table is a user table or not - to search in correct path
      *
-     * @param tableName
-     * @param userTable
-     * @throws IOException
+     * @param tableName name of the table
+     * @param userTable whether the table is a user table or meta table
      */
     public Table(String tableName, boolean userTable) throws IOException {
         this.tableName = tableName;
@@ -39,9 +36,43 @@ public class Table {
     }
 
     /**
-     * Loads the table by creating an entry in columns
-     * @param tableName
-     * @throws IOException
+     * Constructor for Table
+     * @param tableName name of the table to be created
+     * @param columnNames names of the columns
+     * @param columnTypes types of the columns
+     * @param colIsNullable which columns are nullable
+     * @param userDataTable whether the table is a user table or meta table
+     */
+    public Table(String tableName, ArrayList<String> columnNames, ArrayList<Constants.DataTypes> columnTypes,
+                 ArrayList<Boolean> colIsNullable, boolean userDataTable) {
+        this.tableName = tableName;
+        this.columnNames = columnNames;
+        this.columnTypes = columnTypes;
+        this.colIsNullable = colIsNullable;
+        if (userDataTable)
+            this.path = Settings.getUserDataDirectory();
+        else
+            this.path = Settings.getCatalogDirectory();
+        try {
+            tableFile = new TableFile(tableName, this.path);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public static boolean tableExists(String tableName) {
+        ArrayList<Record> tables = null;
+        try {
+            tables = tableTable.search("table_name", tableName, "=");
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+        return tables.size() != 0;
+    }
+
+    /**
+     * Loads the table settings from metadata tables
+     * @param tableName name of the table to be loaded
      */
     public void loadTable(String tableName) throws IOException {
         ArrayList<Record> tables = tableTable.search("table_name", tableName, "=");
@@ -63,39 +94,13 @@ public class Table {
     }
 
     /**
-     * Constructor for Table
-     * @param tableName
-     * @param columnNames
-     * @param columnTypes
-     * @param colIsNullable
-     * @param userDataTable
-     */
-    public Table(String tableName, ArrayList<String> columnNames, ArrayList<Constants.DataTypes> columnTypes,
-                 ArrayList<Boolean> colIsNullable, boolean userDataTable) {
-        this.tableName = tableName;
-        this.columnNames = columnNames;
-        this.columnTypes = columnTypes;
-        this.colIsNullable = colIsNullable;
-        if (userDataTable)
-            this.path = Settings.getUserDataDirectory();
-        else
-            this.path = Settings.getCatalogDirectory();
-        try {
-            tableFile = new TableFile(tableName, this.path);
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    /**
      * Search the table based on value and operator; use index for column if available
-     * @param columnName
-     * @param value
-     * @param operator
+     * @param columnName name of the column to be searched
+     * @param value value to search for
+     * @param operator operator to be used for comparison
      * @return a list of records, an empty list
-     * @throws IOException
      */
-    public ArrayList<Record> search(String columnName, String value, String operator) throws IOException {
+    public ArrayList<Record> search(String columnName, Object value, String operator) throws IOException {
         // Check if index exists for columnName
         // If it does, use index to search
         // If it doesn't, use tableFile to search
@@ -122,21 +127,24 @@ public class Table {
 
     /**
      * Gets the Index file if it exists
-     * @param columnName
-     * @return an index file, else null
-     * @throws IOException
+     * @param columnName column name to get the index file for
+     * @return an index file if it exists, null otherwise
      */
-    public IndexFile getIndexFile(String columnName) throws IOException {
+    public IndexFile getIndexFile(String columnName){
         File indexFile = new File(path + "/" + tableName + "." + columnName + ".ndx");
         if (indexFile.exists()) {
-            return new IndexFile(this, columnName, path);
+            try {
+                return new IndexFile(this, columnName, path);
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
         }
         return null;
     }
 
     /**
      * Get ths type of column
-     * @param columnName
+     * @param columnName name of the column
      * @return "PRI", "UNI", or NULL
      */
     public Constants.DataTypes getColumnType(String columnName) {
@@ -146,8 +154,7 @@ public class Table {
 
     /**
      * Inserts the values into the table; This is where rowid generation is handled
-     * @param values
-     * @throws IOException
+     * @param values values to be inserted
      */
     public void insert(ArrayList<Object> values) throws IOException {
         int nextRowId = tableFile.getLastRowId() + 1;
@@ -175,7 +182,7 @@ public class Table {
      * @param operator operator to use in search
      * @return No of rows deleted
      */
-    public int delete(String columnName, String value, String operator) throws IOException {
+    public int delete(String columnName, Object value, String operator) throws IOException {
         ArrayList<Record> records = search(columnName, value, operator);
         for (Record record : records) {
             tableFile.deleteRecord(record.getRowId());
@@ -196,8 +203,8 @@ public class Table {
      * @param updateValue New value to write
      * @return no of rows updated
      */
-    public int update(String searchColumn, String searchValue, String operator,
-                      String updateColumn, String updateValue ) throws IOException {
+    public int update(String searchColumn, Object searchValue, String operator,
+                      String updateColumn, Object updateValue) throws IOException {
 
         int columnIndex;
         if (columnNames.contains(updateColumn)) {
@@ -207,8 +214,7 @@ public class Table {
         }
         ArrayList<Record> records = search(searchColumn, searchValue, operator);
         for (Record record : records) {
-            Object updateValueObj = DataFunctions.parseString(columnTypes.get(columnIndex), updateValue);
-            tableFile.updateRecord(record.getRowId(), columnIndex, updateValueObj);
+            tableFile.updateRecord(record.getRowId(), columnIndex, updateValue);
             if (indexExists(updateColumn)) {
                 IndexFile indexFile = getIndexFile(updateColumn);
                 indexFile.addItemToCell(updateValue, record.getRowId());
@@ -220,7 +226,7 @@ public class Table {
 
     /**
      * Drops the table, and delete corresponding meta data and indexes.
-     * @return
+     * @return true if table is dropped, false otherwise
      */
     public boolean dropTable() {
         // java file.delete
@@ -236,7 +242,7 @@ public class Table {
 
     /**
      * Checks if the index file exists
-     * @param columnName
+     * @param columnName column name to check for index
      * @return True if exists, False is not exists.
      */
     public boolean indexExists(String columnName) {
@@ -247,16 +253,14 @@ public class Table {
 
     /**
      * Creates an index file for the column
-     * @param columnName
+     * @param columnName column name to create index for
      */
     public void createIndex(String columnName) {
-        try {
-            IndexFile indexFile = getIndexFile(columnName);
-
-            if (indexFile == null) {
-                indexFile = new IndexFile(this, columnName, path);
-                indexFile.initializeIndex();
-            }
+        if (indexExists(columnName)) {
+            return;
+        }
+        try (IndexFile indexFile = new IndexFile(this, columnName, path)) {
+            indexFile.initializeIndex();
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
