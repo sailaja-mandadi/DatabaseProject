@@ -2,11 +2,13 @@ package MaxwellBase;
 
 import org.junit.Before;
 import org.junit.Test;
-import static org.junit.jupiter.api.Assertions.*;
 
 import java.io.File;
 import java.io.IOException;
 import java.util.Objects;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 public class QueryTest {
     @Before
@@ -116,4 +118,5 @@ public class QueryTest {
         Commands.parseUserCommand("UPDATE test SET col2 = 3 WHERE col1 = test5");
         assertEquals(1, table.search("col2", 3, "=").size());
     }
+
 }

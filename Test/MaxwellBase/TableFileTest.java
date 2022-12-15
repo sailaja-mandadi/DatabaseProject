@@ -25,6 +25,10 @@ public class TableFileTest {
         columnTypes.add(Constants.DataTypes.INT);
         columnTypes.add(Constants.DataTypes.TEXT);
         Scanner sc;
+        File data = new File("data/");
+        data.mkdir();
+        File user_data = new File("data/user_data/");
+        user_data.mkdir();
         try {
             File tFile = new File("data/user_data/test.tbl");
             if (tFile.exists()) {

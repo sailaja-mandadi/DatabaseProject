@@ -2,13 +2,13 @@ package MaxwellBase;
 
 import Constants.Constants;
 
-import static java.lang.System.out;
-
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
+
+import static java.lang.System.out;
 
 public class Commands {
 
@@ -339,13 +339,20 @@ public class Commands {
         }
         // create an array of values at appropriate positions
         for (String[] strings : temp) {
+            if (strings[0] == null || strings[1] == null) {
+                continue;
+            }
             int j = table.columnNames.indexOf(strings[0]);
+            if (j == -1) {
+                out.println("Column " + strings[0] + " does not exist.");
+                return;
+            }
             values[j] = strings[1];
         }
         // for each null value , check if it can be nullable
         for (int flag = 0; flag < values.length; flag++) {
             if (values[flag] == null && !table.colIsNullable.get(flag)) {
-                out.println(table.columnNames.get(flag) + "can not be NULL!");
+                out.println(table.columnNames.get(flag) + " can not be NULL!");
                 return;
             }
         }

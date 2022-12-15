@@ -166,6 +166,7 @@ public class Table {
                     int columnIndex = columnNames.indexOf(columnName);
                     ArrayList<Record> search = search(columnName, values.get(columnIndex), "=");
                     if (search.size() > 0) {
+                        System.out.println("Duplicate entry '" + values.get(columnIndex) + "' for key '" + columnName + "'");
                         return false;
                     }
                 }
