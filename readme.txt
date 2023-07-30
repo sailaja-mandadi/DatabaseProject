@@ -1,4 +1,5 @@
-﻿------------------------- DEPENDENCIES ----------------------------
+This is a group project and I contributed to it.
+------------------------- DEPENDENCIES ----------------------------
 
 
 Java JDK 18 or above (not tested on version lower than 18)
